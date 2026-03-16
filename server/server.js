@@ -5,10 +5,15 @@ import mongoose from 'mongoose';
 import connectDB from './src/config/db.js';
 import cookieParser from "cookie-parser";
 import authRoutes from './src/routes/auth.route.js';
+import courseRoutes from './src/routes/course.routes.js';
+import enrollmentRoutes from './src/routes/enrollment.routes.js';
 
 dotenv.config();
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -23,7 +28,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-
+app.use("/api/courses", courseRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

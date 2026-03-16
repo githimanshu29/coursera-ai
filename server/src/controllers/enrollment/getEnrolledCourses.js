@@ -32,7 +32,7 @@ export const getEnrolledCourseById = async (req, res) => {
     res.status(200).json({
       success: true,
       course,
-      enrollment,
+      enrollment,//both course and enrollment details are sent in response
     });
   } catch (error) {
     console.error("getEnrolledCourseById error:", error.message);
