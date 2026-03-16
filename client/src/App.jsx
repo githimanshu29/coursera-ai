@@ -1,34 +1,42 @@
 import { Routes, Route } from "react-router-dom";
-
-import Loader from "./components/ui/Loader.jsx";
 import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register.jsx";
+import WorkspaceLayout from "./components/ui/layout/WorkspaceLayout.jsx";
+import ProtectedRoute from "./components/ui/layout/ProtectedRoute.jsx";
+import Dashboard from "./pages/workspace/Dashboard.jsx";
 
-const Landing = () => (
-  <div className="p-10 flex flex-col gap-6">
-    {/* test Button */}
-    <Button>Primary Button</Button>
-    <Button variant="outline">Outline Button</Button>
-    <Button variant="ghost">Ghost Button</Button>
-    <Button isLoading={true}>Loading Button</Button>
-
-    {/* test Input */}
-    <Input placeholder="Type something..." />
-    <Input placeholder="With label" label="Email" />
-    <Input placeholder="With error" error="This field is required" />
-
-    {/* test Loader */}
-    <Loader />
-  </div>
-);
+import EditCourse from "./pages/workspace/EditCourse.jsx";
+import ViewCourse from "./pages/workspace/ViewCourse.jsx";
+import CourseView from "./pages/course/CourseView.jsx";
+const Landing = () => <div style={{ color: "white", padding: "40px" }}>Landing Page</div>;
 
 const App = () => {
   return (
-      <Routes>
+    <Routes>
+      {/* public routes */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      {/* <Route path="/workspace" element={<Dashboard />} /> */}
+
+      {/* workspace routes — have sidebar layout */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<WorkspaceLayout />}>
+          <Route path="/workspace" element={<Dashboard />} />
+          <Route path="/workspace/my-learning" element={<Dashboard />} />
+          <Route path="/workspace/explore" element={<Dashboard />} />
+          <Route path="/workspace/ai-tools" element={<Dashboard />} />
+          <Route path="/workspace/billing" element={<Dashboard />} />
+          <Route path="/workspace/profile" element={<Dashboard />} />
+          <Route path="/workspace/edit-course/:courseId" element={<EditCourse />} />
+          <Route path="/workspace/view-course/:courseId" element={<ViewCourse />} />
+        </Route>
+      </Route>
+
+      {/* course study route — has its OWN layout (no workspace sidebar) */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/course/:courseId" element={<CourseView />} />
+      </Route>
+
     </Routes>
   );
 };

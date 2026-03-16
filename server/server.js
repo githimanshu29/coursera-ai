@@ -20,7 +20,7 @@ app.use(cookieParser());
 
 
 connectDB();
-const PORT=process.env.PORT||6000;
+const PORT=process.env.PORT||5005;
 
 
 app.get("/", (req, res) => {

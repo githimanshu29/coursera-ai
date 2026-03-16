@@ -4,6 +4,7 @@ const initialState = {
   courses: [],
   enrolledCourses: [],
   currentCourse: null,
+  isCreateCourseOpen: false,
 };
 
 const courseSlice = createSlice({
@@ -29,6 +30,14 @@ const courseSlice = createSlice({
         (e) => e.course.cid !== action.payload
       );
     },
+
+    openCreateCourse: (state) => {
+  state.isCreateCourseOpen = true;
+},
+closeCreateCourse: (state) => {
+  state.isCreateCourseOpen = false;
+},
+
   },
 });
 
@@ -38,6 +47,8 @@ export const {
   setCurrentCourse,
   removeCourse,
   removeEnrolledCourse,
+    openCreateCourse,   
+  closeCreateCourse,
 } = courseSlice.actions;
 
 export default courseSlice.reducer;

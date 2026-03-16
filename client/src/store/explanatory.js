@@ -39,3 +39,45 @@ export default store;
 // The key (e.g., auth) is how you will access that data later using a hook like useSelector(state => state.auth).
 
 // The value (e.g., authReducer) is the logic that dictates how that specific data changes
+
+
+
+
+
+
+/*
+  
+So when do you use which?
+Data            Where to store          Why  
+user object        Redux          Needed everywhere —                              sidebar, dashboard, 
+                               course creation 
+isAuthenticatedReduxNeeded by ProtectedRoute, sidebar, navbaraccessTokenRedux + localStorageNeeded by axios interceptorcourses listReact Query (NOT Redux)Server data — needs caching, refetchingenrolled coursesReact Query (NOT Redux)Server data — changes oftencurrent courseReact QueryServer data
+
+*/
+
+
+
+
+
+
+
+/*
+**Complete picture of our architecture:**
+```
+REDUX STORE
+└── auth slice
+    ├── user        ← who is logged in (set ONCE at login)
+    ├── accessToken ← for axios interceptor
+    └── isAuthenticated ← for ProtectedRoute
+
+REACT QUERY CACHE
+├── ["userCourses"]    ← courses list (refetched when needed)
+├── ["enrolledCourses"] ← enrolled courses
+└── ["course", id]     ← single course data
+
+AXIOS INSTANCE
+└── just a configured HTTP client
+    ├── baseURL set
+    ├── token auto-attached
+    └── auto refresh on 401
+*/
