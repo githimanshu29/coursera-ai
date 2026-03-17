@@ -1,9 +1,21 @@
 /* eslint-disable no-unused-vars */
+import { useState, useEffect } from "react";
+
 const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkComplete }) => {
   const chapter = course?.courseContent?.[activeChapterIndex];
   const chapterLayout = course?.courseJson?.chapters?.[activeChapterIndex];
   const topicContent = chapter?.courseData?.content?.[activeTopicIndex];
   const videos = chapter?.youtubeVideo || [];
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = (e) => setIsMobile(e.matches);
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   if (!chapter) return (
     <div style={{
@@ -35,7 +47,7 @@ const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkCo
 
       {/* chapter title */}
       <h1 style={{
-        color: "white", fontSize: "26px",
+        color: "white", fontSize: isMobile ? "22px" : "26px",
         fontWeight: "700", marginBottom: "32px",
         lineHeight: "1.3",
       }}>
@@ -66,7 +78,7 @@ const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkCo
 
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(200px, 1fr))",
             gap: "12px",
           }}>
             {videos.slice(0, 3).map((video, i) => (
@@ -181,7 +193,7 @@ const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkCo
               key={tIndex}
               style={{
                 marginBottom: "32px",
-                padding: "24px",
+                padding: isMobile ? "16px" : "24px",
                 background: isActive
                   ? "rgba(124,58,237,0.05)"
                   : "rgba(255,255,255,0.02)",
@@ -194,8 +206,10 @@ const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkCo
               <div style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "flex-start",
+                alignItems: isMobile ? "flex-start" : "flex-start",
                 marginBottom: "16px",
+                flexDirection: isMobile ? "column" : "row",
+                gap: isMobile ? "12px" : "0",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{
@@ -211,7 +225,7 @@ const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkCo
                   </div>
                   <div>
                     <h2 style={{
-                      color: "white", fontSize: "18px",
+                      color: "white", fontSize: isMobile ? "16px" : "18px",
                       fontWeight: "700", marginBottom: "4px",
                     }}>
                       {topicData?.topic}
@@ -245,13 +259,9 @@ const ChapterContent = ({ course, activeChapterIndex, activeTopicIndex, onMarkCo
                 </button>
               </div>
 
-              {/* html content */}
+              {/* html content — with study-content class for enhanced typography */}
               <div
-                style={{
-                  color: "#d1d5db",
-                  fontSize: "14px",
-                  lineHeight: "1.8",
-                }}
+                className="study-content"
                 dangerouslySetInnerHTML={{ __html: topicData?.htmlContent }}
               />
 

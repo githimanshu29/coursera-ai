@@ -8,7 +8,9 @@ import Dashboard from "./pages/workspace/Dashboard.jsx";
 import EditCourse from "./pages/workspace/EditCourse.jsx";
 import ViewCourse from "./pages/workspace/ViewCourse.jsx";
 import CourseView from "./pages/course/CourseView.jsx";
-const Landing = () => <div style={{ color: "white", padding: "40px" }}>Landing Page</div>;
+
+import Landing from "./pages/LandingPage.jsx";
+
 
 const App = () => {
   return (

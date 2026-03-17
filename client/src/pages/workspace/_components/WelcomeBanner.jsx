@@ -4,7 +4,7 @@ const WelcomeBanner = () => {
   const { user } = useSelector((state) => state.auth);
 
   return (
-    <div style={{
+    <div className="welcome-banner" style={{
       background: "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(109,40,217,0.05))",
       border: "1px solid rgba(124,58,237,0.2)",
       borderRadius: "16px",

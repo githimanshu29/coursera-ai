@@ -63,7 +63,7 @@ const navItems = [
   },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose, isMobile }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
@@ -79,175 +79,215 @@ const Sidebar = () => {
     }
   };
 
+  const handleNavClick = () => {
+    if (isMobile && onClose) onClose();
+  };
+
   return (
-    <div style={{
-      width: "240px",
-      minHeight: "100vh",
-      background: "rgba(255,255,255,0.02)",
-      borderRight: "1px solid rgba(255,255,255,0.06)",
-      display: "flex",
-      flexDirection: "column",
-      padding: "20px 12px",
-      position: "fixed",
-      left: 0,
-      top: 0,
-      zIndex: 50,
-      fontFamily: "'Inter', sans-serif",
-    }}>
+    <>
+      {/* mobile overlay backdrop */}
+      {isMobile && isOpen && (
+        <div
+          onClick={onClose}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(2px)",
+            zIndex: 49,
+          }}
+        />
+      )}
 
-      {/* logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 8px", marginBottom: "28px" }}>
-        <div style={{
-          width: "34px", height: "34px",
-          background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-          borderRadius: "10px",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 15px rgba(124,58,237,0.4)",
-          flexShrink: 0,
-        }}>
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-        </div>
-        <span style={{ color: "white", fontWeight: "700", fontSize: "17px", letterSpacing: "-0.3px" }}>
-          Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
-        </span>
-      </div>
-
-      {/* create course button */}
-      <button
-         onClick={() => dispatch(openCreateCourse())}
-        style={{
-          width: "100%",
-          padding: "11px 16px",
-          borderRadius: "12px",
-          background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-          border: "none",
-          color: "white",
-          fontSize: "13px",
-          fontWeight: "600",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          marginBottom: "24px",
-          boxShadow: "0 4px 15px rgba(124,58,237,0.3)",
-          transition: "all 0.2s",
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #6d28d9, #5b21b6)"}
-        onMouseLeave={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #7c3aed, #6d28d9)"}
-        
-
-      >
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-        Create Course
-      </button>
-
-      {/* nav items */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === "/workspace"}
-            style={({ isActive }) => ({
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "10px 12px",
-              borderRadius: "10px",
-              textDecoration: "none",
-              color: isActive ? "white" : "#6b7280",
-              background: isActive ? "rgba(124,58,237,0.2)" : "transparent",
-              fontSize: "13px",
-              fontWeight: isActive ? "600" : "400",
-              transition: "all 0.2s",
-              borderLeft: isActive ? "2px solid #7c3aed" : "2px solid transparent",
-            })}
-            onMouseEnter={(e) => {
-              if (!e.currentTarget.classList.contains("active")) {
-                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                e.currentTarget.style.color = "#d1d5db";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!e.currentTarget.classList.contains("active")) {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#6b7280";
-              }
-            }}
-          >
-            {item.icon}
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* user + logout */}
       <div style={{
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        paddingTop: "16px",
+        width: "240px",
+        minHeight: "100vh",
+        background: isMobile ? "#0a0f1e" : "rgba(255,255,255,0.02)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
+        padding: "20px 12px",
+        position: "fixed",
+        left: isMobile ? (isOpen ? "0" : "-260px") : 0,
+        top: 0,
+        zIndex: 50,
+        fontFamily: "'Inter', sans-serif",
+        transition: isMobile ? "left 0.3s ease" : "none",
       }}>
-        {/* user info */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 4px" }}>
+
+        {/* mobile close button */}
+        {isMobile && (
+          <button
+            onClick={onClose}
+            style={{
+              position: "absolute", top: "12px", right: "12px",
+              background: "rgba(255,255,255,0.05)",
+              border: "none", color: "#9ca3af",
+              width: "32px", height: "32px",
+              borderRadius: "8px", cursor: "pointer",
+              display: "flex", alignItems: "center",
+              justifyContent: "center", fontSize: "18px",
+            }}
+          >
+            ✕
+          </button>
+        )}
+
+        {/* logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 8px", marginBottom: "28px" }}>
           <div style={{
             width: "34px", height: "34px",
-            borderRadius: "50%",
             background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+            borderRadius: "10px",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "14px", flexShrink: 0,
+            boxShadow: "0 4px 15px rgba(124,58,237,0.4)",
+            flexShrink: 0,
           }}>
-            {user?.name?.charAt(0).toUpperCase() || "U"}
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
           </div>
-          <div style={{ overflow: "hidden" }}>
-            <p style={{ color: "white", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user?.name || "User"}
-            </p>
-            <p style={{ color: "#6b7280", fontSize: "11px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user?.email || ""}
-            </p>
-          </div>
+          <span style={{ color: "white", fontWeight: "700", fontSize: "17px", letterSpacing: "-0.3px" }}>
+            Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+          </span>
         </div>
 
-        {/* logout */}
+        {/* create course button */}
         <button
-          onClick={handleLogout}
+           onClick={() => { dispatch(openCreateCourse()); handleNavClick(); }}
           style={{
-            width: "100%", padding: "9px 12px",
-            borderRadius: "10px",
-            background: "transparent",
-            border: "1px solid rgba(239,68,68,0.2)",
-            color: "#f87171", fontSize: "13px",
+            width: "100%",
+            padding: "11px 16px",
+            borderRadius: "12px",
+            background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+            border: "none",
+            color: "white",
+            fontSize: "13px",
+            fontWeight: "600",
             cursor: "pointer",
-            display: "flex", alignItems: "center",
-            gap: "8px", transition: "all 0.2s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            marginBottom: "24px",
+            boxShadow: "0 4px 15px rgba(124,58,237,0.3)",
+            transition: "all 0.2s",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.1)";
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.2)";
-          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #6d28d9, #5b21b6)"}
+          onMouseLeave={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #7c3aed, #6d28d9)"}
+          
+
         >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Logout
+          Create Course
         </button>
 
-        <p style={{ color: "#374151", fontSize: "11px", textAlign: "center" }}>
-          © 2025 Course AI
-        </p>
+        {/* nav items */}
+        <nav style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === "/workspace"}
+              onClick={handleNavClick}
+              style={({ isActive }) => ({
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                textDecoration: "none",
+                color: isActive ? "white" : "#6b7280",
+                background: isActive ? "rgba(124,58,237,0.2)" : "transparent",
+                fontSize: "13px",
+                fontWeight: isActive ? "600" : "400",
+                transition: "all 0.2s",
+                borderLeft: isActive ? "2px solid #7c3aed" : "2px solid transparent",
+              })}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.classList.contains("active")) {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                  e.currentTarget.style.color = "#d1d5db";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.classList.contains("active")) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#6b7280";
+                }
+              }}
+            >
+              {item.icon}
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* user + logout */}
+        <div style={{
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          paddingTop: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}>
+          {/* user info */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 4px" }}>
+            <div style={{
+              width: "34px", height: "34px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "14px", flexShrink: 0,
+            }}>
+              {user?.name?.charAt(0).toUpperCase() || "U"}
+            </div>
+            <div style={{ overflow: "hidden" }}>
+              <p style={{ color: "white", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {user?.name || "User"}
+              </p>
+              <p style={{ color: "#6b7280", fontSize: "11px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {user?.email || ""}
+              </p>
+            </div>
+          </div>
+
+          {/* logout */}
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%", padding: "9px 12px",
+              borderRadius: "10px",
+              background: "transparent",
+              border: "1px solid rgba(239,68,68,0.2)",
+              color: "#f87171", fontSize: "13px",
+              cursor: "pointer",
+              display: "flex", alignItems: "center",
+              gap: "8px", transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(239,68,68,0.1)";
+              e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "rgba(239,68,68,0.2)";
+            }}
+          >
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
+
+          <p style={{ color: "#374151", fontSize: "11px", textAlign: "center" }}>
+            © 2025 Course AI
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

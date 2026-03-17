@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getCourseByIdApi, getEnrolledCourseByIdApi } from "../../lib/api.js";
@@ -11,6 +11,20 @@ const CourseView = () => {
   const navigate = useNavigate();
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [activeTopicIndex, setActiveTopicIndex] = useState(0);
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = (e) => {
+      setIsMobile(e.matches);
+      if (!e.matches) setSidebarOpen(false);
+    };
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // ── fetch course ──────────────────────────────────────────────────────────
   const { data: course, isLoading: courseLoading } = useQuery({
@@ -91,14 +105,18 @@ const CourseView = () => {
         activeChapterIndex={activeChapterIndex}
         activeTopicIndex={activeTopicIndex}
         onTopicClick={handleTopicClick}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isMobile={isMobile}
       />
 
       {/* main content */}
       <div style={{
-        marginLeft: "300px",
+        marginLeft: isMobile ? "0" : "300px",
         flex: 1,
-        padding: "40px",
+        padding: isMobile ? "20px 16px" : "40px",
         minHeight: "100vh",
+        transition: "margin-left 0.3s ease",
       }}>
 
         {/* top navbar */}
@@ -107,9 +125,34 @@ const CourseView = () => {
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "32px",
+          flexWrap: "wrap",
+          gap: "10px",
         }}>
-          {/* logo */}
+          {/* left side: hamburger (mobile) + logo */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {/* mobile sidebar toggle */}
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: "36px", height: "36px",
+                  borderRadius: "10px",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "#9ca3af",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
+
+            {/* logo */}
             <div style={{
               width: "32px", height: "32px",
               background: "linear-gradient(135deg, #7c3aed, #6d28d9)",

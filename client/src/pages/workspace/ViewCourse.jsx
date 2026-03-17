@@ -1,10 +1,21 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { getEnrolledCourseByIdApi } from "../../lib/api.js";
 
 const ViewCourse = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = (e) => setIsMobile(e.matches);
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["enrolledCourse", courseId],
@@ -41,7 +52,7 @@ const ViewCourse = () => {
 
       {/* header */}
       <div style={{ marginBottom: "40px", textAlign: "center" }}>
-        <h1 style={{ color: "white", fontSize: "28px", fontWeight: "700", marginBottom: "8px" }}>
+        <h1 style={{ color: "white", fontSize: isMobile ? "22px" : "28px", fontWeight: "700", marginBottom: "8px" }}>
           Course Roadmap
         </h1>
         <p style={{ color: "#6b7280", fontSize: "14px" }}>
@@ -50,31 +61,34 @@ const ViewCourse = () => {
       </div>
 
       {/* timeline */}
-      <div style={{ position: "relative", padding: "0 20px" }}>
+      <div className="timeline-container" style={{ position: "relative", padding: "0 20px" }}>
 
         {/* center vertical line */}
-        <div style={{
+        <div className="timeline-line" style={{
           position: "absolute",
-          left: "50%", top: 0, bottom: 0,
+          left: isMobile ? "20px" : "50%",
+          top: 0, bottom: 0,
           width: "2px",
           background: "linear-gradient(180deg, #7c3aed, #a78bfa, #ec4899)",
-          transform: "translateX(-50%)",
+          transform: isMobile ? "none" : "translateX(-50%)",
         }} />
 
         {course?.courseJson?.chapters?.map((chapter, i) => {
           const isLeft = i % 2 === 0;
           return (
-            <div key={i} style={{
+            <div key={i} className="timeline-item" style={{
               display: "flex",
-              justifyContent: isLeft ? "flex-start" : "flex-end",
+              justifyContent: isMobile ? "flex-start" : (isLeft ? "flex-start" : "flex-end"),
               marginBottom: "40px",
               position: "relative",
+              paddingLeft: isMobile ? "50px" : "0",
             }}>
 
               {/* chapter number node */}
-              <div style={{
+              <div className="timeline-node" style={{
                 position: "absolute",
-                left: "50%", top: "20px",
+                left: isMobile ? "20px" : "50%",
+                top: "20px",
                 transform: "translateX(-50%)",
                 width: "36px", height: "36px",
                 borderRadius: "50%",
@@ -89,8 +103,8 @@ const ViewCourse = () => {
               </div>
 
               {/* chapter card */}
-              <div style={{
-                width: "42%",
+              <div className="timeline-card" style={{
+                width: isMobile ? "100%" : "42%",
                 background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(109,40,217,0.1))",
                 border: "1px solid rgba(124,58,237,0.3)",
                 borderRadius: "14px",
@@ -117,37 +131,62 @@ const ViewCourse = () => {
                 <p style={{ color: "#a78bfa", fontSize: "11px" }}>
                   {chapter.topics?.length} Topics
                 </p>
+
+                {/* topics list — inline on mobile */}
+                {isMobile && (
+                  <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {chapter.topics?.map((topic, j) => (
+                      <div key={j} style={{
+                        display: "flex", alignItems: "center", gap: "8px",
+                        padding: "6px 10px",
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: "8px",
+                      }}>
+                        <div style={{
+                          width: "14px", height: "14px",
+                          borderRadius: "50%",
+                          border: "1.5px solid rgba(124,58,237,0.5)",
+                          flexShrink: 0,
+                        }} />
+                        <span style={{ color: "#d1d5db", fontSize: "11px" }}>{topic}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* topics list — opposite side */}
-              <div style={{
-                position: "absolute",
-                width: "42%",
-                left: isLeft ? "58%" : "0%",
-                top: "0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                paddingTop: "8px",
-              }}>
-                {chapter.topics?.map((topic, j) => (
-                  <div key={j} style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 12px",
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: "8px",
-                  }}>
-                    <div style={{
-                      width: "16px", height: "16px",
-                      borderRadius: "50%",
-                      border: "1.5px solid rgba(124,58,237,0.5)",
-                      flexShrink: 0,
-                    }} />
-                    <span style={{ color: "#d1d5db", fontSize: "12px" }}>{topic}</span>
-                  </div>
-                ))}
-              </div>
+              {/* topics list — opposite side (desktop only) */}
+              {!isMobile && (
+                <div className="timeline-topics" style={{
+                  position: "absolute",
+                  width: "42%",
+                  left: isLeft ? "58%" : "0%",
+                  top: "0",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  paddingTop: "8px",
+                }}>
+                  {chapter.topics?.map((topic, j) => (
+                    <div key={j} style={{
+                      display: "flex", alignItems: "center", gap: "8px",
+                      padding: "8px 12px",
+                      background: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      borderRadius: "8px",
+                    }}>
+                      <div style={{
+                        width: "16px", height: "16px",
+                        borderRadius: "50%",
+                        border: "1.5px solid rgba(124,58,237,0.5)",
+                        flexShrink: 0,
+                      }} />
+                      <span style={{ color: "#d1d5db", fontSize: "12px" }}>{topic}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
