@@ -7,6 +7,10 @@ import cookieParser from "cookie-parser";
 import authRoutes from './src/routes/auth.route.js';
 import courseRoutes from './src/routes/course.routes.js';
 import enrollmentRoutes from './src/routes/enrollment.routes.js';
+import chatRoutes from './src/routes/'
+import errorHandler from './src/middleware/errorHandler.js';
+import requestLogger from './src/middleware/requestLogger.js';
+import logger from './src/lib/logger.js';
 
 dotenv.config();
 const app = express();
@@ -17,6 +21,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(requestLogger);
 
 
 connectDB();
@@ -30,6 +36,9 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
+
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
