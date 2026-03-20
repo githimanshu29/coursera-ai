@@ -11,6 +11,7 @@ import chatRoutes from './src/routes/'
 import errorHandler from './src/middleware/errorHandler.js';
 import requestLogger from './src/middleware/requestLogger.js';
 import logger from './src/lib/logger.js';
+import {globalLimiter} from './src/middleware/rateLimiter.js'
 
 dotenv.config();
 const app = express();
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.use(globalLimiter);
 app.use(requestLogger);
 
 
