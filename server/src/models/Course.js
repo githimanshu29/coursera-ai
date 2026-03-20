@@ -31,9 +31,26 @@ const courseSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["SETUP_REQUIRED", "READY"],
+      enum: ["SETUP_REQUIRED", "BUILDING", "READY"],
       default: "SETUP_REQUIRED",
     },
+
+    generationMode: {
+  type: String,
+  enum: ["all_at_once", "step_by_step"],
+  default: "all_at_once",
+},
+
+chaptersBuilt: {
+  type: Number,
+  default: 0,
+},
+
+currentChapterIndex: {
+  type: Number,
+  default: 0,
+},
+
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
