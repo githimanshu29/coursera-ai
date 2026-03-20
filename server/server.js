@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from './src/routes/auth.route.js';
 import courseRoutes from './src/routes/course.routes.js';
 import enrollmentRoutes from './src/routes/enrollment.routes.js';
-import chatRoutes from './src/routes/'
+
 import errorHandler from './src/middleware/errorHandler.js';
 import requestLogger from './src/middleware/requestLogger.js';
 import logger from './src/lib/logger.js';
