@@ -2,11 +2,11 @@
 
 <div align="center">
 
-![Coursera-AI Banner](public/logo.svg)
+
 
 **Transform any topic into a comprehensive course with AI-generated chapters, rich content, and curated videos.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-courseraai.vercel.app-7c3aed?style=for-the-badge)](https://courseraai.vercel.app)
+
 [![GitHub](https://img.shields.io/badge/GitHub-coursera--ai-181717?style=for-the-badge&logo=github)](https://github.com/githimanshu29/coursera-ai)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
@@ -402,7 +402,7 @@ The following features are currently under active development and will be releas
 
 ## Author
 
-**Himanshu Kumar**
+**Himanshu**
 Third-year undergraduate | MERN Stack + GenAI Engineer
 
 [![GitHub](https://img.shields.io/badge/GitHub-githimanshu29-181717?style=flat&logo=github)](https://github.com/githimanshu29)
