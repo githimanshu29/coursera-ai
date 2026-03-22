@@ -8,7 +8,6 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { jsonrepair } from "jsonrepair";
 import logger from "../logger.js";
 
-// ── LLM instance ─────────────────────────────────────────────
 const getLLM = () =>
   new ChatGoogleGenerativeAI({
     apiKey: process.env.GEMINI_API_KEY,
@@ -53,7 +52,6 @@ Return ONLY valid JSON, no explanation, no markdown fences:
 }}
 `);
 
-// ── Parse user instruction into style directives ──────────────
 export const parseUserInstruction = (instruction) => {
   if (!instruction?.trim()) {
     return "Generate comprehensive, well-structured content with clear explanations.";
@@ -132,7 +130,6 @@ const formatRetrievedContext = (chunks) => {
     .join("\n\n");
 };
 
-// ── Main RAG chain builder ─────────────────────────────────────
 export const buildRagChain = () => {
   const llm = getLLM();
   const outputParser = new StringOutputParser();
@@ -151,7 +148,6 @@ export const buildRagChain = () => {
   return chain;
 };
 
-// ── Run chain + parse output ───────────────────────────────────
 export const generateChapterWithRAG = async ({
   courseName,
   courseLevel,
