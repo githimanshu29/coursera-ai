@@ -1,7 +1,7 @@
 import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import mongoose from "mongoose";
 import getEmbeddings from "./embeddings.js";
-import logger from "../logger.js"
+import logger from "../logger.js";
 
 // get vector store instance for a specific course
 export const getVectorStore = () => {
@@ -57,7 +57,9 @@ export const storeChapterChunks = async ({
     }
   }
 
-  logger.info(`Stored ${stored} chunks for course:${courseId} chapter:${chapterIndex}`);
+  logger.info(
+    `Stored ${stored} chunks for course:${courseId} chapter:${chapterIndex}`,
+  );
   return stored;
 };
 
@@ -71,8 +73,12 @@ export const retrieveRelevantChunks = async ({
 }) => {
   const vectorStore = getVectorStore();
 
+  //filter ek javascript object hai yaha par jo ki MongoDB Atlas ke vector search ke liye use hota hai. Isme hum specify kar rahe hain ki humein sirf wahi chunks chahiye jo ki current course se belong karte hain (courseId), jise current user ne create kiya hai (userId), aur jinka chapter index current chapter se chhota hai (currentChapterIndex). Is tarah se hum ensure karte hain ki humein sirf relevant aur allowed chunks hi milen, jo ki RAG process ke liye zaruri hain.
   const filter = {
+    //prefilter comes from MongoDb Atlas vector Search, meaning of prefilter is apply these conditions before searching for relevant chunks based on vector similarity. Isme hum compound condition use kar rahe hain jisme must ka matlab hai ki in sab conditions ko satisfy karna zaruri hai. Pehli condition hai ki courseId match hona chahiye, dusri condition hai ki userId match hona chahiye, aur teesri condition hai ki chapterIndex currentChapterIndex se chhota hona chahiye. Is tarah se hum ensure karte hain ki humein sirf wahi chunks milen jo ki current course ke hain, jise current user ne create kiya hai, aur jo ki current chapter se pehle ke chapters se belong karte hain.
     preFilter: {
+      //compound is used to combine multiple objects,ALL conditions must be true (AND logic)
+
       compound: {
         must: [
           { equals: { path: "courseId", value: courseId } },
@@ -86,11 +92,11 @@ export const retrieveRelevantChunks = async ({
   const results = await vectorStore.similaritySearchWithScore(
     query,
     topK,
-    filter
+    filter,
   );
 
   logger.info(
-    `Retrieved ${results.length} chunks for query: "${query.slice(0, 50)}..."`
+    `Retrieved ${results.length} chunks for query: "${query.slice(0, 50)}..."`,
   );
 
   return results.map(([doc, score]) => ({

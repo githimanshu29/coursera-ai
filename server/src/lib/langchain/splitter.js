@@ -1,5 +1,6 @@
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
+//getSplitter is a implicit function that does not requires return keyword, it directly returns RecursiveCharacterTextSplitter
 const getSplitter = () =>
   new RecursiveCharacterTextSplitter({
     chunkSize: 500,
@@ -10,8 +11,12 @@ const getSplitter = () =>
 // strip HTML tags before splitting jaruri hai
 
 // example input: "<p>This is <b>bold</b> and <i>italic</i>.</p>"  output: "This is bold and italic."
-export const stripHtml = (html) =>
-  html?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || "";
+export const stripHtml = (html) => {
+  return (html || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
 // split a single topic into chunks
 export const splitTopicContent = async (topic, htmlContent) => {
@@ -19,9 +24,9 @@ export const splitTopicContent = async (topic, htmlContent) => {
   const plainText = `Topic: ${topic}\n\n${stripHtml(htmlContent)}`;
   const docs = await splitter.createDocuments(
     [plainText],
-    [{ topic }] // metadata attached to every chunk
+    [{ topic }], // metadata attached to every chunk
   );
-  return docs;// output hai array objects ka array
+  return docs; // output hai array, objects ka array
 };
 
 export default getSplitter;
