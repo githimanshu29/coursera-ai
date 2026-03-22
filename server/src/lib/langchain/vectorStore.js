@@ -71,39 +71,41 @@ export const retrieveRelevantChunks = async ({
   currentChapterIndex,
   topK = 5,
 }) => {
+  // first chapter has no previous context — skip retrieval
+  if (currentChapterIndex === 0) return [];
+
   const vectorStore = getVectorStore();
 
-  //filter ek javascript object hai yaha par jo ki MongoDB Atlas ke vector search ke liye use hota hai. Isme hum specify kar rahe hain ki humein sirf wahi chunks chahiye jo ki current course se belong karte hain (courseId), jise current user ne create kiya hai (userId), aur jinka chapter index current chapter se chhota hai (currentChapterIndex). Is tarah se hum ensure karte hain ki humein sirf relevant aur allowed chunks hi milen, jo ki RAG process ke liye zaruri hain.
-  const filter = {
-    //prefilter comes from MongoDb Atlas vector Search, meaning of prefilter is apply these conditions before searching for relevant chunks based on vector similarity. Isme hum compound condition use kar rahe hain jisme must ka matlab hai ki in sab conditions ko satisfy karna zaruri hai. Pehli condition hai ki courseId match hona chahiye, dusri condition hai ki userId match hona chahiye, aur teesri condition hai ki chapterIndex currentChapterIndex se chhota hona chahiye. Is tarah se hum ensure karte hain ki humein sirf wahi chunks milen jo ki current course ke hain, jise current user ne create kiya hai, aur jo ki current chapter se pehle ke chapters se belong karte hain.
-    preFilter: {
-      //compound is used to combine multiple objects,ALL conditions must be true (AND logic)
+  try {
+    // Atlas Vector Search filter — must use MQL not aggregation syntax
+    const filter = {
+      courseId: courseId,
+      userId: userId.toString(),
+      chapterIndex: { $lt: currentChapterIndex },
+    };
 
-      compound: {
-        must: [
-          { equals: { path: "courseId", value: courseId } },
-          { equals: { path: "userId", value: userId } },
-          { range: { path: "chapterIndex", lt: currentChapterIndex } },
-        ],
-      },
-    },
-  };
+    const results = await vectorStore.similaritySearchWithScore(
+      query,
+      topK,
+      filter,
+    );
 
-  const results = await vectorStore.similaritySearchWithScore(
-    query,
-    topK,
-    filter,
-  );
+    logger.info(
+      `Retrieved ${results.length} chunks for query: "${query.slice(0, 50)}"`,
+    );
 
-  logger.info(
-    `Retrieved ${results.length} chunks for query: "${query.slice(0, 50)}..."`,
-  );
-
-  return results.map(([doc, score]) => ({
-    content: doc.pageContent,
-    topic: doc.metadata.topic,
-    chapterName: doc.metadata.chapterName,
-    chapterIndex: doc.metadata.chapterIndex,
-    score: parseFloat(score.toFixed(3)),
-  }));
+    return results.map(([doc, score]) => ({
+      content: doc.pageContent,
+      topic: doc.metadata.topic,
+      chapterName: doc.metadata.chapterName,
+      chapterIndex: doc.metadata.chapterIndex,
+      score: parseFloat(score.toFixed(3)),
+    }));
+  } catch (error) {
+    // if retrieval fails — don't block generation, just continue without context
+    logger.warn(
+      `Vector retrieval failed: ${error.message} — continuing without context`,
+    );
+    return [];
+  }
 };

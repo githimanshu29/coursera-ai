@@ -7,7 +7,7 @@ const courseQueue = new Bull("course-generation", {
     port: process.env.REDIS_PORT || 6379,
   },
   defaultJobOptions: {
-    attempts: 2,
+    attempts: 1,
     backoff: {
       type: "exponential",
       delay: 3000, // 3s then 6s

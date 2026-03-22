@@ -1,6 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 import mongoose from "mongoose";
 import courseQueue from "../courseQueue.js";
 import Course from "../../models/Course.js";
@@ -19,14 +16,14 @@ const connectWorkerDB = async () => {
   }
 };
 
-
-
 courseQueue.process("generate-chapter", async (job) => {
   const { courseId, chapterIndex, userInstruction, userId } = job.data;
 
   await connectWorkerDB();
 
-  logger.info(`Worker processing chapter ${chapterIndex} for course ${courseId}`);
+  logger.info(
+    `Worker processing chapter ${chapterIndex} for course ${courseId}`,
+  );
 
   const course = await Course.findOne({ cid: courseId });
   if (!course) throw new Error(`Course not found: ${courseId}`);
@@ -34,19 +31,20 @@ courseQueue.process("generate-chapter", async (job) => {
   const currentChapter = course.courseJson.chapters[chapterIndex];
   if (!currentChapter) throw new Error(`Chapter ${chapterIndex} not found`);
 
-  // retrieve relevant chunks from previous chapters 
+  // retrieve relevant chunks from previous chapters
   job.progress(10);
   const ragQuery = `${currentChapter.chapterName} ${currentChapter.topics.join(" ")} ${userInstruction || ""}`;
 
-  const retrievedChunks = chapterIndex > 0
-    ? await retrieveRelevantChunks({
-        courseId,
-        userId,
-        query: ragQuery,
-        currentChapterIndex: chapterIndex,
-        topK: 5,
-      })
-    : [];
+  const retrievedChunks =
+    chapterIndex > 0
+      ? await retrieveRelevantChunks({
+          courseId,
+          userId,
+          query: ragQuery,
+          currentChapterIndex: chapterIndex,
+          topK: 5,
+        })
+      : [];
 
   logger.info(`Retrieved ${retrievedChunks.length} relevant chunks`);
   job.progress(25);
@@ -72,7 +70,10 @@ courseQueue.process("generate-chapter", async (job) => {
   //  Step 3: chunk + embed + store in vector store.
   const allDocs = [];
   for (const topicData of chapterData.content) {
-    const docs = await splitTopicContent(topicData.topic, topicData.htmlContent);
+    const docs = await splitTopicContent(
+      topicData.topic,
+      topicData.htmlContent,
+    );
     allDocs.push(...docs);
   }
 
@@ -100,36 +101,46 @@ courseQueue.process("generate-chapter", async (job) => {
             maxResults: 3,
             key: process.env.YOUTUBE_API_KEY,
           },
-        }
+        },
       );
       videos = ytResp.data.items.map((item) => ({
         videoId: item.id.videoId,
         title: item.snippet.title,
       }));
     } catch (err) {
-      logger.warn(`YouTube fetch failed for chapter ${chapterIndex}: ${err.message}`);
+      logger.warn(
+        `YouTube fetch failed for chapter ${chapterIndex}: ${err.message}`,
+      );
     }
   }
 
   job.progress(90);
 
   //Step 5: save to course ───────────────────────────────────
-  if (!course.courseContent) course.courseContent = [];
-  course.courseContent[chapterIndex] = {
-    courseData: chapterData,
-    youtubeVideo: videos,
-  };
+ if (!course.courseContent) course.courseContent = [];
+course.courseContent[chapterIndex] = {
+  courseData: chapterData,
+  youtubeVideo: videos,
+};
 
-  const isLastChapter = chapterIndex + 1 >= course.courseJson.chapters.length;
-  course.chaptersBuilt = chapterIndex + 1;
-  course.currentChapterIndex = isLastChapter ? chapterIndex : chapterIndex + 1;
-  course.status = isLastChapter ? "READY" : "BUILDING";
-  course.markModified("courseContent");
-  await course.save();
+const totalChapters = course.courseJson.chapters.length;
+const newChaptersBuilt = chapterIndex + 1;
+const isLastChapter = newChaptersBuilt >= totalChapters;
+
+course.chaptersBuilt = newChaptersBuilt;
+course.currentChapterIndex = chapterIndex;
+
+// ✅ only set READY when ALL chapters are done
+course.status = isLastChapter ? "READY" : "BUILDING";
+course.generationMode = "step_by_step";
+course.markModified("courseContent");
+await course.save();
 
   job.progress(100);
 
-  logger.info(`Chapter ${chapterIndex} complete — isLastChapter: ${isLastChapter}`);
+  logger.info(
+    `Chapter ${chapterIndex} complete — isLastChapter: ${isLastChapter}`,
+  );
 
   return {
     chapterIndex,

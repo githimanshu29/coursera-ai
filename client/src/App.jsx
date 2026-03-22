@@ -10,7 +10,7 @@ import ViewCourse from "./pages/workspace/ViewCourse.jsx";
 import CourseView from "./pages/course/CourseView.jsx";
 
 import Landing from "./pages/LandingPage.jsx";
-
+import StepBuildCourse from "./pages/workspace/StepBuilderCourse.jsx";
 
 const App = () => {
   return (
@@ -25,12 +25,23 @@ const App = () => {
         <Route element={<WorkspaceLayout />}>
           <Route path="/workspace" element={<Dashboard />} />
           <Route path="/workspace/my-learning" element={<Dashboard />} />
+          <Route
+            path="/workspace/step-build/:courseId"
+            element={<StepBuildCourse />}
+          />
+
           <Route path="/workspace/explore" element={<Dashboard />} />
           <Route path="/workspace/ai-tools" element={<Dashboard />} />
           <Route path="/workspace/billing" element={<Dashboard />} />
           <Route path="/workspace/profile" element={<Dashboard />} />
-          <Route path="/workspace/edit-course/:courseId" element={<EditCourse />} />
-          <Route path="/workspace/view-course/:courseId" element={<ViewCourse />} />
+          <Route
+            path="/workspace/edit-course/:courseId"
+            element={<EditCourse />}
+          />
+          <Route
+            path="/workspace/view-course/:courseId"
+            element={<ViewCourse />}
+          />
         </Route>
       </Route>
 
@@ -38,7 +49,6 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/course/:courseId" element={<CourseView />} />
       </Route>
-
     </Routes>
   );
 };
