@@ -11,7 +11,6 @@ const CourseView = () => {
   const navigate = useNavigate();
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [activeTopicIndex, setActiveTopicIndex] = useState(0);
-
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -26,24 +25,27 @@ const CourseView = () => {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // ── fetch course ──────────────────────────────────────────────────────────
+  // ── fetch course directly — works enrolled or not ─────────────────────────
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
       const res = await getCourseByIdApi(courseId);
       return res.data.course;
     },
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
-  // ── fetch enrollment ──────────────────────────────────────────────────────
-  const {
-    data: enrollmentData,
-    refetch: refetchEnrollment,
-  } = useQuery({
+  // ── fetch enrollment separately — optional ────────────────────────────────
+  const { data: enrollmentData, refetch: refetchEnrollment } = useQuery({
     queryKey: ["enrollment", courseId],
     queryFn: async () => {
-      const res = await getEnrolledCourseByIdApi(courseId);
-      return res.data.enrollment;
+      try {
+        const res = await getEnrolledCourseByIdApi(courseId);
+        return res.data.enrollment;
+      } catch {
+        return null; // not enrolled yet — that's fine
+      }
     },
   });
 
@@ -68,36 +70,51 @@ const CourseView = () => {
     markCompleteMutation.mutate({ chapterIndex, topicIndex });
   };
 
-  if (courseLoading) return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#0a0f1e",
-      display: "flex", alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column", gap: "16px",
-    }}>
-      <div style={{
-        width: "40px", height: "40px",
-        border: "3px solid rgba(124,58,237,0.3)",
-        borderTop: "3px solid #7c3aed",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite",
-      }} />
-      <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "'Inter', sans-serif" }}>
-        Loading course...
-      </p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
+  if (courseLoading)
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#0a0f1e",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
+        <div
+          style={{
+            width: "40px",
+            height: "40px",
+            border: "3px solid rgba(124,58,237,0.3)",
+            borderTop: "3px solid #7c3aed",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <p
+          style={{
+            color: "#6b7280",
+            fontSize: "14px",
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          Loading course...
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#0a0f1e",
-      display: "flex",
-      fontFamily: "'Inter', sans-serif",
-    }}>
-
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#0a0f1e",
+        display: "flex",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
       {/* sidebar */}
       <ChapterSidebar
         course={course}
@@ -111,32 +128,37 @@ const CourseView = () => {
       />
 
       {/* main content */}
-      <div style={{
-        marginLeft: isMobile ? "0" : "300px",
-        flex: 1,
-        padding: isMobile ? "20px 16px" : "40px",
-        minHeight: "100vh",
-        transition: "margin-left 0.3s ease",
-      }}>
-
+      <div
+        style={{
+          marginLeft: isMobile ? "0" : "300px",
+          flex: 1,
+          padding: isMobile ? "20px 16px" : "40px",
+          minHeight: "100vh",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
         {/* top navbar */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}>
-          {/* left side: hamburger (mobile) + logo */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "32px",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
+          {/* left side: hamburger + logo */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {/* mobile sidebar toggle */}
             {isMobile && (
               <button
                 onClick={() => setSidebarOpen(true)}
                 style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: "36px", height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "36px",
+                  height: "36px",
                   borderRadius: "10px",
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.08)",
@@ -146,25 +168,51 @@ const CourseView = () => {
                   flexShrink: 0,
                 }}
               >
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  width="18"
+                  height="18"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               </button>
             )}
-
-            {/* logo */}
-            <div style={{
-              width: "32px", height: "32px",
-              background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              borderRadius: "8px",
-              display: "flex", alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="white"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
               </svg>
             </div>
-            <span style={{ color: "white", fontWeight: "700", fontSize: "16px" }}>
+            <span
+              style={{ color: "white", fontWeight: "700", fontSize: "16px" }}
+            >
               Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
             </span>
           </div>
@@ -173,12 +221,15 @@ const CourseView = () => {
           <button
             onClick={() => navigate("/workspace")}
             style={{
-              width: "36px", height: "36px",
+              width: "36px",
+              height: "36px",
               borderRadius: "10px",
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
-              color: "#6b7280", cursor: "pointer",
-              display: "flex", alignItems: "center",
+              color: "#6b7280",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
               justifyContent: "center",
               transition: "all 0.2s",
             }}
@@ -191,8 +242,19 @@ const CourseView = () => {
               e.currentTarget.style.color = "#6b7280";
             }}
           >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
             </svg>
           </button>
         </div>

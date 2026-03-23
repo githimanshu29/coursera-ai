@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 const CourseCard = ({
   course,
@@ -7,7 +7,7 @@ const CourseCard = ({
   onGenerateContent,
   onContinueBuilding,
 }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const isReady = course.status === "READY";
   const isBuilding = course.status === "BUILDING";
 
@@ -180,29 +180,53 @@ const CourseCard = ({
           ⊕ Enroll
         </button>
       ) : isBuilding ? (
-        <button
-          onClick={() => onContinueBuilding(course.cid)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            borderRadius: "10px",
-            background: "rgba(124,58,237,0.15)",
-            border: "1px solid rgba(124,58,237,0.4)",
-            color: "#a78bfa",
-            fontSize: "13px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(124,58,237,0.25)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "rgba(124,58,237,0.15)")
-          }
-        >
-          ⚡ Continue Building
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {/* enroll if at least 1 chapter built */}
+          {(course.chaptersBuilt || 0) > 0 && (
+            <button
+              onClick={() => onEnroll(course.cid)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                border: "none",
+                color: "white",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              ⊕ Enroll & Study So Far
+            </button>
+          )}
+          <button
+            onClick={() => onContinueBuilding(course.cid)}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "10px",
+              background: "rgba(124,58,237,0.15)",
+              border: "1px solid rgba(124,58,237,0.4)",
+              color: "#a78bfa",
+              fontSize: "13px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(124,58,237,0.25)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "rgba(124,58,237,0.15)")
+            }
+          >
+            ⚡ Continue Building
+          </button>
+        </div>
       ) : (
         <button
           onClick={() => onGenerateContent(course.cid)}

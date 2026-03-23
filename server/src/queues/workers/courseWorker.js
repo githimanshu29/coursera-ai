@@ -8,6 +8,7 @@ import { retrieveRelevantChunks } from "../../lib/langchain/vectorStore.js";
 
 import logger from "../../lib/logger.js";
 import axios from "axios";
+import redis from "../../lib/redis.js";
 
 const connectWorkerDB = async () => {
   if (mongoose.connection.readyState === 0) {
@@ -117,24 +118,31 @@ courseQueue.process("generate-chapter", async (job) => {
   job.progress(90);
 
   //Step 5: save to course ───────────────────────────────────
- if (!course.courseContent) course.courseContent = [];
-course.courseContent[chapterIndex] = {
-  courseData: chapterData,
-  youtubeVideo: videos,
-};
+  if (!course.courseContent) course.courseContent = [];
+  course.courseContent[chapterIndex] = {
+    courseData: chapterData,
+    youtubeVideo: videos,
+  };
 
-const totalChapters = course.courseJson.chapters.length;
-const newChaptersBuilt = chapterIndex + 1;
-const isLastChapter = newChaptersBuilt >= totalChapters;
+  const totalChapters = course.courseJson.chapters.length;
+  const newChaptersBuilt = chapterIndex + 1;
+  const isLastChapter = newChaptersBuilt >= totalChapters;
 
-course.chaptersBuilt = newChaptersBuilt;
-course.currentChapterIndex = chapterIndex;
+  course.chaptersBuilt = newChaptersBuilt;
+  course.currentChapterIndex = chapterIndex;
 
-// ✅ only set READY when ALL chapters are done
-course.status = isLastChapter ? "READY" : "BUILDING";
-course.generationMode = "step_by_step";
-course.markModified("courseContent");
-await course.save();
+  // ✅ only set READY when ALL chapters are done
+  course.status = isLastChapter ? "READY" : "BUILDING";
+  course.generationMode = "step_by_step";
+  course.markModified("courseContent");
+  await course.save();
+  try {
+    const cacheKeys = await redis.keys(`cache:/api/courses*`);
+    if (cacheKeys.length > 0) await redis.del(...cacheKeys);
+    logger.info(`Cache invalidated after chapter ${chapterIndex} save`);
+  } catch (cacheErr) {
+    logger.warn(`Cache invalidation failed: ${cacheErr.message}`);
+  }
 
   job.progress(100);
 
