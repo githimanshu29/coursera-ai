@@ -11,6 +11,7 @@ import enrollmentRoutes from "./src/routes/enrollment.routes.js";
 import errorHandler from "./src/middleware/errorHandler.js";
 import requestLogger from "./src/middleware/requestLogger.js";
 import logger from "./src/lib/logger.js";
+import quizRoutes from "./src/routes/quiz.routes.js";
 // import {globalLimiter} from './src/middleware/rateLimiter.js'
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/quiz", quizRoutes);
 
 app.use(errorHandler);
 

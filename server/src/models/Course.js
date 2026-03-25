@@ -17,15 +17,11 @@ const courseSchema = new mongoose.Schema(
 
     // Step 1 — AI generated layout (chapters + topics structure)
 
-
     courseJson: { type: Object, default: {} },
-    
-    
+
     //courseJson is object containing chapters(array, which contains chapters as object). i,e each chapter of chapter[] is object as element.
 
     // Step 2 — AI generated full content
-
-
 
     courseContent: { type: Object, default: {} },
 
@@ -36,37 +32,33 @@ const courseSchema = new mongoose.Schema(
     },
 
     generationMode: {
-  type: String,
-  enum: ["all_at_once", "step_by_step"],
-  default: "all_at_once",
-},
+      type: String,
+      enum: ["all_at_once", "step_by_step"],
+      default: "all_at_once",
+    },
 
-chaptersBuilt: {
-  type: Number,
-  default: 0,
-},
+    chaptersBuilt: {
+      type: Number,
+      default: 0,
+    },
 
-currentChapterIndex: {
-  type: Number,
-  default: 0,
-},
-
+    currentChapterIndex: {
+      type: Number,
+      default: 0,
+    },
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "User", //this is base due to courses are fetched
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Course = mongoose.model("Course", courseSchema);
 
 export default Course;
-
-
-
 
 /*
  Without ref + populate:          With ref + populate:

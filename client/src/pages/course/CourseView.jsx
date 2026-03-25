@@ -6,6 +6,9 @@ import axiosInstance from "../../lib/axios.js";
 import ChapterSidebar from "./_components/ChapterSidebar.jsx";
 import ChapterContent from "./_components/ChapterContent.jsx";
 
+import { generateQuizApi } from "../../lib/api.js";
+import QuizModal from "./_components/QuizModal.jsx";
+
 const CourseView = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -68,6 +71,26 @@ const CourseView = () => {
 
   const handleMarkComplete = (chapterIndex, topicIndex) => {
     markCompleteMutation.mutate({ chapterIndex, topicIndex });
+  };
+
+  //for quiz
+  const [showFinalQuiz, setShowFinalQuiz] = useState(false);
+  const [finalQuizData, setFinalQuizData] = useState(null);
+  const [isLoadingFinalQuiz, setIsLoadingFinalQuiz] = useState(false);
+
+  const isFullyComplete = course?.status === "READY";
+
+  const handleFinalQuiz = async () => {
+    setIsLoadingFinalQuiz(true);
+    try {
+      const res = await generateQuizApi(course.cid, -1); // -1 = final quiz
+      setFinalQuizData(res.data.quiz);
+      setShowFinalQuiz(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingFinalQuiz(false);
+    }
   };
 
   if (courseLoading)
@@ -266,6 +289,48 @@ const CourseView = () => {
           activeTopicIndex={activeTopicIndex}
           onMarkComplete={handleMarkComplete}
         />
+        {/* final quiz button */}
+
+        {isFullyComplete && (
+  <div style={{
+    marginTop: "32px", padding: "20px 24px",
+    borderRadius: "16px",
+    background: "rgba(124,58,237,0.08)",
+    border: "1px solid rgba(124,58,237,0.2)",
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+  }}>
+    <div>
+      <p style={{ color: "white", fontSize: "16px", fontWeight: "700" }}>
+        Course Complete — Take the Final Quiz!
+      </p>
+      <p style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}>
+        Test your knowledge across the entire course. Score 80%+ to earn the course badge.
+      </p>
+    </div>
+    <button
+      onClick={handleFinalQuiz}
+      disabled={isLoadingFinalQuiz}
+      style={{
+        padding: "10px 20px", borderRadius: "10px",
+        background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+        border: "none", color: "white",
+        fontSize: "13px", fontWeight: "600",
+        cursor: "pointer", whiteSpace: "nowrap",
+      }}
+    >
+      {isLoadingFinalQuiz ? "Generating..." : "🏆 Final Quiz"}
+    </button>
+  </div>
+)}
+
+{showFinalQuiz && finalQuizData && (
+  <QuizModal
+    quiz={finalQuizData}
+    onClose={() => setShowFinalQuiz(false)}
+    onComplete={(result) => console.log("Final quiz result:", result)}
+  />
+)}
+
       </div>
     </div>
   );

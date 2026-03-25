@@ -19,19 +19,19 @@ const enrollmentSchema = new mongoose.Schema(
     },
 
     completedTopics: {
-  type: [String],
-  default: [],
-},
-progress: {
-  type: Number,
-  default: 0,
-},
+      type: [String],
+      default: [],
+    },
+    progress: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // one enrollment per user per course
-enrollmentSchema.index({ cid: 1, userId: 1 }, { unique: true });
+enrollmentSchema.index({ cid: 1, userId: 1 }, { unique: true }); // used for fast superfast LOOKUP Enrollment.findOne({ cid, userId });
 
 const Enrollment = mongoose.model("Enrollment", enrollmentSchema);
 

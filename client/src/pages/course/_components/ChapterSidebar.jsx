@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getCourseQuizStatusApi } from "../../../lib/api.js";
 
 const ChapterSidebar = ({
   course,
@@ -27,6 +29,16 @@ const ChapterSidebar = ({
     onTopicClick(chIndex, tIndex);
     if (isMobile && onClose) onClose();
   };
+
+  // ── quiz status query ─────────────────────────────────────
+  const { data: quizStatuses } = useQuery({
+    queryKey: ["quizStatus", course?.cid],
+    queryFn: async () => {
+      const res = await getCourseQuizStatusApi(course.cid);
+      return res.data.quizzes;
+    },
+    enabled: !!course?.cid,
+  });
 
   return (
     <>
@@ -214,8 +226,12 @@ const ChapterSidebar = ({
         <div style={{ padding: "8px", flex: 1 }}>
           {course?.courseJson?.chapters?.map((chapter, chIndex) => {
             const isActiveChapter = chIndex === activeChapterIndex;
-            // ✅ check if chapter has content
             const hasContent = chIndex < builtChapters;
+
+            // ── quiz badge for this chapter ───────────────
+            const chapterQuiz = quizStatuses?.find(
+              (q) => q.chapterIndex === chIndex,
+            );
 
             return (
               <div key={chIndex} style={{ marginBottom: "4px" }}>
@@ -230,16 +246,15 @@ const ChapterSidebar = ({
                     background: isActiveChapter
                       ? "rgba(124,58,237,0.15)"
                       : "transparent",
-                    // ✅ locked cursor + dimmed for unbuilt chapters
                     cursor: hasContent ? "pointer" : "not-allowed",
                     opacity: hasContent ? 1 : 0.4,
                     transition: "background 0.2s",
                   }}
-                  // ✅ only clickable if chapter has content
                   onClick={() =>
                     hasContent && handleTopicClickInternal(chIndex, 0)
                   }
                 >
+                  {/* chapter number circle */}
                   <div
                     style={{
                       width: "24px",
@@ -265,6 +280,8 @@ const ChapterSidebar = ({
                   >
                     {hasContent && !isActiveChapter ? "✓" : chIndex + 1}
                   </div>
+
+                  {/* chapter name */}
                   <p
                     style={{
                       color: isActiveChapter
@@ -275,12 +292,48 @@ const ChapterSidebar = ({
                       fontSize: "12px",
                       fontWeight: isActiveChapter ? "600" : "400",
                       lineHeight: "1.4",
+                      flex: 1,
                     }}
                   >
                     {chapter.chapterName}
                   </p>
 
-                  {/* locked icon for unbuilt chapters */}
+                  {/* ── quiz badge ── */}
+                  {chapterQuiz?.attempted && (
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontSize: "10px",
+                        fontWeight: "600",
+                        padding: "2px 6px",
+                        borderRadius: "20px",
+                        background: chapterQuiz.passed
+                          ? "rgba(34,197,94,0.15)"
+                          : "rgba(248,113,113,0.15)",
+                        color: chapterQuiz.passed ? "#4ade80" : "#f87171",
+                      }}
+                    >
+                      {chapterQuiz.score}%
+                    </span>
+                  )}
+
+                  {/* skipped badge */}
+                  {chapterQuiz?.skipped && !chapterQuiz?.attempted && (
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontSize: "10px",
+                        padding: "2px 6px",
+                        borderRadius: "20px",
+                        background: "rgba(107,114,128,0.15)",
+                        color: "#6b7280",
+                      }}
+                    >
+                      skipped
+                    </span>
+                  )}
+
+                  {/* locked icon */}
                   {!hasContent && (
                     <span
                       style={{
@@ -294,7 +347,7 @@ const ChapterSidebar = ({
                   )}
                 </div>
 
-                {/* topics list — show when chapter is active AND has content */}
+                {/* topics list — show when active AND has content */}
                 {isActiveChapter && hasContent && (
                   <div style={{ paddingLeft: "12px", marginTop: "2px" }}>
                     {chapter.topics?.map((topic, tIndex) => {

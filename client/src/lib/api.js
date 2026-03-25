@@ -26,6 +26,19 @@ export const getEnrolledCourseByIdApi = (courseId) =>
 export const deleteEnrollmentApi = (enrollmentId) =>
   axiosInstance.delete(`/enrollments/${enrollmentId}`);
 
+// ── QUIZ ─────────────────────────────────────────────────────
+export const generateQuizApi = (courseId, chapterIndex) =>
+  axiosInstance.get(`/quiz/generate/${courseId}/${chapterIndex}`);
+
+export const submitQuizApi = (quizId, answers) =>
+  axiosInstance.post("/quiz/submit", { quizId, answers });
+
+export const skipQuizApi = (quizId) =>
+  axiosInstance.post("/quiz/skip", { quizId });
+
+export const getCourseQuizStatusApi = (courseId) =>
+  axiosInstance.get(`/quiz/status/${courseId}`);
+
 export const getAccessToken = () => localStorage.getItem("accessToken");
 
 // SSE connection — returns EventSource object

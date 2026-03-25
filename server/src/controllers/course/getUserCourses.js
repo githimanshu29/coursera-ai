@@ -27,10 +27,10 @@ export const getCourseById = async (req, res) => {
   }
 };
 
-
-// sare cpurses k lie
+// sare courses k lie
 export const getUserCourses = async (req, res) => {
   try {
+    //
     const courses = await Course.find({ createdBy: req.user._id }).sort({
       createdAt: -1, // latest first
     });
@@ -40,7 +40,10 @@ export const getUserCourses = async (req, res) => {
       courses,
     });
   } catch (error) {
-    console.error("getUserCourses error(cannot get courses from getUserCourses):", error.message);
+    console.error(
+      "getUserCourses error(cannot get courses from getUserCourses):",
+      error.message,
+    );
     res.status(500).json({
       success: false,
       message: "Failed to fetch courses",
