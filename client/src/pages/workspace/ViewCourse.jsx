@@ -444,6 +444,59 @@ const ViewCourse = () => {
           {course?.courseJson?.chapters?.length} chapters · Your structured
           learning path
         </p>
+
+        {/* Start Learning CTA */}
+        <button
+          onClick={() => navigate(`/course/${courseId}`)}
+          style={{
+            marginTop: "20px",
+            padding: "13px 36px",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+            border: "none",
+            color: "white",
+            fontSize: "14px",
+            fontWeight: "700",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "10px",
+            boxShadow: "0 6px 24px rgba(124,58,237,0.35)",
+            transition: "all 0.3s ease",
+            letterSpacing: "-0.2px",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow =
+              "0 10px 32px rgba(124,58,237,0.45)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 24px rgba(124,58,237,0.35)";
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Start Learning
+        </button>
       </div>
 
       {/* ── Timeline ── */}

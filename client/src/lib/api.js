@@ -36,6 +36,9 @@ export const submitQuizApi = (quizId, answers) =>
 export const skipQuizApi = (quizId) =>
   axiosInstance.post("/quiz/skip", { quizId });
 
+export const retakeQuizApi = (quizId) =>
+  axiosInstance.post("/quiz/retake", { quizId });
+
 export const getCourseQuizStatusApi = (courseId) =>
   axiosInstance.get(`/quiz/status/${courseId}`);
 

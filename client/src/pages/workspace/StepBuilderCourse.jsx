@@ -144,6 +144,21 @@ const StepBuildCourse = () => {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "800px" }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes stepPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes genGlow {
+          0%, 100% { box-shadow: 0 4px 20px rgba(124,58,237,0.2); }
+          50% { box-shadow: 0 4px 30px rgba(124,58,237,0.4); }
+        }
+      `}</style>
 
       {/* header */}
       <div style={{ marginBottom: "28px" }}>
@@ -193,6 +208,7 @@ const StepBuildCourse = () => {
                   ? "rgba(124,58,237,0.3)"
                   : "rgba(255,255,255,0.06)"}`,
               transition: "all 0.3s",
+              animation: isCurrent && isGenerating ? "stepPulse 2s ease-in-out infinite" : "none",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                 <div style={{
@@ -231,6 +247,7 @@ const StepBuildCourse = () => {
           borderRadius: "12px",
           display: "flex", justifyContent: "space-between",
           alignItems: "center", marginBottom: "16px",
+          flexWrap: "wrap", gap: "12px",
         }}>
           <div>
             <p style={{ color: "white", fontSize: "14px", fontWeight: "600" }}>
@@ -262,6 +279,7 @@ const StepBuildCourse = () => {
           background: "rgba(34,197,94,0.08)",
           border: "1px solid rgba(34,197,94,0.2)",
           textAlign: "center", marginBottom: "24px",
+          animation: "slideIn 0.5s ease",
         }}>
           <div style={{ fontSize: "40px", marginBottom: "12px" }}>🎉</div>
           <h3 style={{ color: "#4ade80", fontSize: "18px", fontWeight: "700", marginBottom: "8px" }}>
@@ -270,7 +288,7 @@ const StepBuildCourse = () => {
           <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "20px" }}>
             All {totalChapters} chapters generated successfully.
           </p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
             <button
               onClick={() => navigate(`/course/${courseId}`)}
               style={{
@@ -319,6 +337,7 @@ const StepBuildCourse = () => {
                 color: "white", fontSize: "13px", outline: "none",
                 boxSizing: "border-box",
                 opacity: isGenerating ? 0.5 : 1,
+                transition: "all 0.2s",
               }}
               onFocus={(e) => e.target.style.borderColor = "rgba(124,58,237,0.7)"}
               onBlur={(e) => e.target.style.borderColor = "rgba(75,85,99,0.5)"}
@@ -341,18 +360,20 @@ const StepBuildCourse = () => {
               justifyContent: "center", gap: "10px",
               marginBottom: "20px",
               boxShadow: isGenerating ? "none" : "0 4px 20px rgba(124,58,237,0.3)",
+              animation: isGenerating ? "genGlow 2s ease-in-out infinite" : "none",
+              transition: "all 0.3s",
             }}
           >
             {isGenerating ? (
               <>
-                <span style={{
-                  width: "16px", height: "16px",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderTop: "2px solid white",
+                <div style={{
+                  width: "18px", height: "18px",
+                  border: "2.5px solid rgba(255,255,255,0.2)",
+                  borderTop: "2.5px solid white",
                   borderRadius: "50%", display: "inline-block",
                   animation: "spin 0.7s linear infinite",
                 }} />
-                Generating Chapter {displayChaptersBuilt + 1}...
+                <span>Generating Chapter {displayChaptersBuilt + 1}...</span>
               </>
             ) : (
               <>
@@ -377,8 +398,6 @@ const StepBuildCourse = () => {
           totalChapters={totalChapters}
         />
       )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

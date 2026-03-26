@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { generateQuizApi, getCourseQuizStatusApi } from "../../../lib/api.js";
+import { generateQuizApi, getCourseQuizStatusApi, retakeQuizApi } from "../../../lib/api.js";
 import QuizModal from "./QuizModal.jsx";
 
 const ChapterContent = ({
@@ -22,6 +22,8 @@ const ChapterContent = ({
   const [showFinalQuiz, setShowFinalQuiz] = useState(false);
   const [finalQuizData, setFinalQuizData] = useState(null);
   const [isLoadingFinalQuiz, setIsLoadingFinalQuiz] = useState(false);
+  const [isRetakingChapter, setIsRetakingChapter] = useState(false);
+  const [isRetakingFinal, setIsRetakingFinal] = useState(false);
 
   // ── derived values ────────────────────────────────────────
   const currentChapter = course?.courseJson?.chapters?.[activeChapterIndex];
@@ -75,8 +77,58 @@ const ChapterContent = ({
   };
 
   const handleQuizComplete = (result) => {
+    if (result?.retake) {
+      // Quiz was retaken — re-open modal with new quiz
+      setQuizData(result.newQuiz);
+      setShowQuiz(true);
+      refetchQuizStatus();
+      return;
+    }
     setQuizResult(result);
     refetchQuizStatus();
+  };
+
+  const handleFinalQuizComplete = (result) => {
+    if (result?.retake) {
+      setFinalQuizData(result.newQuiz);
+      setShowFinalQuiz(true);
+      refetchQuizStatus();
+      return;
+    }
+    handleQuizComplete(result);
+    setShowFinalQuiz(false);
+  };
+
+  const handleRetakeChapterQuiz = async () => {
+    if (!currentQuizStatus?._id) return;
+    setIsRetakingChapter(true);
+    try {
+      await retakeQuizApi(currentQuizStatus._id);
+      const res = await generateQuizApi(course.cid, activeChapterIndex);
+      setQuizData(res.data.quiz);
+      setShowQuiz(true);
+      refetchQuizStatus();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsRetakingChapter(false);
+    }
+  };
+
+  const handleRetakeFinalQuiz = async () => {
+    if (!finalQuizStatus?._id) return;
+    setIsRetakingFinal(true);
+    try {
+      await retakeQuizApi(finalQuizStatus._id);
+      const res = await generateQuizApi(course.cid, -1);
+      setFinalQuizData(res.data.quiz);
+      setShowFinalQuiz(true);
+      refetchQuizStatus();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsRetakingFinal(false);
+    }
   };
 
   useEffect(() => {
@@ -506,9 +558,10 @@ const ChapterContent = ({
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px",
+                  justifyContent: "space-between",
+                  gap: "14px",
                   padding: "16px 20px",
-                  borderRadius: "12px",
+                  borderRadius: "14px",
                   background: currentQuizStatus.passed
                     ? "rgba(34,197,94,0.08)"
                     : "rgba(248,113,113,0.08)",
@@ -517,34 +570,91 @@ const ChapterContent = ({
                       ? "rgba(34,197,94,0.2)"
                       : "rgba(248,113,113,0.2)"
                   }`,
+                  flexWrap: "wrap",
                 }}
               >
-                <span style={{ fontSize: "24px" }}>
-                  {currentQuizStatus.passed ? "🏆" : "📝"}
-                </span>
-                <div>
-                  <p
-                    style={{
-                      color: currentQuizStatus.passed ? "#4ade80" : "#f87171",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Chapter Quiz: {currentQuizStatus.score}%
-                    {currentQuizStatus.passed ? " — Passed!" : " — Not passed"}
-                  </p>
-                  <p
-                    style={{
-                      color: "#6b7280",
-                      fontSize: "12px",
-                      marginTop: "2px",
-                    }}
-                  >
-                    {currentQuizStatus.passed
-                      ? "Badge earned for this chapter ✓"
-                      : "Score 80%+ to earn the chapter badge"}
-                  </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                  <span style={{ fontSize: "24px" }}>
+                    {currentQuizStatus.passed ? "🏆" : "📝"}
+                  </span>
+                  <div>
+                    <p
+                      style={{
+                        color: currentQuizStatus.passed ? "#4ade80" : "#f87171",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Chapter Quiz: {currentQuizStatus.score}%
+                      {currentQuizStatus.passed ? " — Passed!" : " — Not passed"}
+                    </p>
+                    <p
+                      style={{
+                        color: "#6b7280",
+                        fontSize: "12px",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {currentQuizStatus.passed
+                        ? "Badge earned for this chapter ✓"
+                        : "Score 80%+ to earn the chapter badge"}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={handleRetakeChapterQuiz}
+                  disabled={isRetakingChapter}
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: "10px",
+                    background: "rgba(124,58,237,0.1)",
+                    border: "1px solid rgba(124,58,237,0.25)",
+                    color: "#a78bfa",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    cursor: isRetakingChapter ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isRetakingChapter) {
+                      e.currentTarget.style.background = "rgba(124,58,237,0.2)";
+                      e.currentTarget.style.borderColor = "rgba(124,58,237,0.4)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(124,58,237,0.1)";
+                    e.currentTarget.style.borderColor = "rgba(124,58,237,0.25)";
+                  }}
+                >
+                  {isRetakingChapter ? (
+                    <>
+                      <span
+                        style={{
+                          width: "12px",
+                          height: "12px",
+                          border: "2px solid rgba(167,139,250,0.3)",
+                          borderTop: "2px solid #a78bfa",
+                          borderRadius: "50%",
+                          display: "inline-block",
+                          animation: "spin 0.7s linear infinite",
+                        }}
+                      />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Retake Quiz
+                    </>
+                  )}
+                </button>
               </div>
             ) : currentQuizStatus?.skipped ? (
               <div
@@ -636,36 +746,90 @@ const ChapterContent = ({
           >
             {finalQuizStatus?.attempted ? (
               <div
-                style={{ display: "flex", alignItems: "center", gap: "14px" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", flexWrap: "wrap" }}
               >
-                <span style={{ fontSize: "32px" }}>
-                  {finalQuizStatus.passed ? "🎓" : "📋"}
-                </span>
-                <div>
-                  <p
-                    style={{
-                      color: finalQuizStatus.passed ? "#4ade80" : "#f87171",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                    }}
-                  >
-                    Final Quiz: {finalQuizStatus.score}%
-                    {finalQuizStatus.passed
-                      ? " — Course Completed!"
-                      : " — Not passed"}
-                  </p>
-                  <p
-                    style={{
-                      color: "#6b7280",
-                      fontSize: "13px",
-                      marginTop: "4px",
-                    }}
-                  >
-                    {finalQuizStatus.passed
-                      ? "You've mastered this course!"
-                      : "Score 80%+ to earn the course completion badge"}
-                  </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1 }}>
+                  <span style={{ fontSize: "32px" }}>
+                    {finalQuizStatus.passed ? "🎓" : "📋"}
+                  </span>
+                  <div>
+                    <p
+                      style={{
+                        color: finalQuizStatus.passed ? "#4ade80" : "#f87171",
+                        fontSize: "16px",
+                        fontWeight: "700",
+                      }}
+                    >
+                      Final Quiz: {finalQuizStatus.score}%
+                      {finalQuizStatus.passed
+                        ? " — Course Completed!"
+                        : " — Not passed"}
+                    </p>
+                    <p
+                      style={{
+                        color: "#6b7280",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {finalQuizStatus.passed
+                        ? "You've mastered this course!"
+                        : "Score 80%+ to earn the course completion badge"}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={handleRetakeFinalQuiz}
+                  disabled={isRetakingFinal}
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: "10px",
+                    background: "rgba(124,58,237,0.1)",
+                    border: "1px solid rgba(124,58,237,0.25)",
+                    color: "#a78bfa",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: isRetakingFinal ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isRetakingFinal) {
+                      e.currentTarget.style.background = "rgba(124,58,237,0.2)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(124,58,237,0.1)";
+                  }}
+                >
+                  {isRetakingFinal ? (
+                    <>
+                      <span
+                        style={{
+                          width: "12px",
+                          height: "12px",
+                          border: "2px solid rgba(167,139,250,0.3)",
+                          borderTop: "2px solid #a78bfa",
+                          borderRadius: "50%",
+                          display: "inline-block",
+                          animation: "spin 0.7s linear infinite",
+                        }}
+                      />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Retake Final Quiz
+                    </>
+                  )}
+                </button>
               </div>
             ) : (
               <div
@@ -725,6 +889,8 @@ const ChapterContent = ({
       {showQuiz && quizData && (
         <QuizModal
           quiz={quizData}
+          courseId={course?.cid}
+          chapterIndex={activeChapterIndex}
           onClose={() => setShowQuiz(false)}
           onComplete={handleQuizComplete}
         />
@@ -733,11 +899,10 @@ const ChapterContent = ({
       {showFinalQuiz && finalQuizData && (
         <QuizModal
           quiz={finalQuizData}
+          courseId={course?.cid}
+          chapterIndex={-1}
           onClose={() => setShowFinalQuiz(false)}
-          onComplete={(result) => {
-            handleQuizComplete(result);
-            setShowFinalQuiz(false);
-          }}
+          onComplete={handleFinalQuizComplete}
         />
       )}
 

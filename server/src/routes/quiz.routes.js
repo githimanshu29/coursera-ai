@@ -4,6 +4,7 @@ import { aiLimiter } from "../middleware/rateLimiter.js";
 import { generateQuiz } from "../controllers/quiz/generateQuiz.js";
 import { submitQuiz } from "../controllers/quiz/submitQuiz.js";
 import { skipQuiz } from "../controllers/quiz/skipQuiz.js";
+import { retakeQuiz } from "../controllers/quiz/retakeQuiz.js";
 import { getCourseQuizStatus } from "../controllers/quiz/getQuizStatus.js";
 
 const router = express.Router();
@@ -16,6 +17,7 @@ router.get(
 );
 router.post("/submit", protect, submitQuiz);
 router.post("/skip", protect, skipQuiz);
+router.post("/retake", protect, retakeQuiz);
 router.get("/status/:courseId", protect, getCourseQuizStatus);
 
 export default router;

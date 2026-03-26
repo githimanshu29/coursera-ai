@@ -326,6 +326,8 @@ const CourseView = () => {
 {showFinalQuiz && finalQuizData && (
   <QuizModal
     quiz={finalQuizData}
+    courseId={course?.cid}
+    chapterIndex={-1}
     onClose={() => setShowFinalQuiz(false)}
     onComplete={(result) => console.log("Final quiz result:", result)}
   />
