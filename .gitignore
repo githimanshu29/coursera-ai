@@ -1,5 +1,30 @@
-node_modules/
-.env
-*.log
+
 vviConceptExplained.js
 Explanation/
+
+
+# dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# environment files
+.env
+.env.local
+.env.production
+client/.env
+client/.env.local
+client/.env.production
+server/.env
+
+# logs
+logs/
+*.log
+
+# build output
+client/dist/
+server/dist/
+
+# OS files
+.DS_Store
+Thumbs.db

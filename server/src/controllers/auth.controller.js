@@ -29,15 +29,15 @@ export const register = async (req, res) => {
     }
 
     // create user (password auto hashed by pre save hook)
-    const user = await User.create({ 
-        name, 
-        email, 
-        password, 
-        gender,
-         avatar
- });
+    const user = await User.create({
+      name,
+      email,
+      password,
+      gender,
+      avatar,
+    });
 
-   // 🚨 Safety check
+    // 🚨 Safety check
     if (!user || !user._id) {
       return res.status(500).json({
         success: false,
@@ -45,11 +45,10 @@ export const register = async (req, res) => {
       });
     }
 
-     const safeUser = {
+    const safeUser = {
       id: user._id,
       name: user.name,
       email: user.email,
-      
     };
 
     // generate tokens
@@ -62,15 +61,20 @@ export const register = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, //true in production
-      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+      sameSite:
+        process.env.NODE_ENV === "production" // cross-domain in prod
+          ? "none"
+          : "lax",
+      path: "/",
     });
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
       accessToken,
-      
+
       user: safeUser,
     });
   } catch (error) {
@@ -86,7 +90,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-if (!email || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
         message: "Provide valide email and password",
@@ -118,29 +122,29 @@ if (!email || !password) {
     user.refreshToken = refreshToken;
     await user.save();
 
-    
     //set refreshToken into cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, //true in production
-      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+      sameSite:
+        process.env.NODE_ENV === "production" // cross-domain in prod
+          ? "none"
+          : "lax",
+      path: "/",
     });
 
-    
     const safeUser = {
       id: user._id,
       name: user.name,
       email: user.email,
-      
     };
-
 
     res.status(200).json({
       success: true,
       message: "Login successful",
       accessToken,
-        user: safeUser,
-      
+      user: safeUser,
     });
   } catch (error) {
     res.status(500).json({
@@ -154,7 +158,7 @@ if (!email || !password) {
 // REFRESH TOKEN
 export const refreshToken = async (req, res) => {
   try {
-    const  refreshToken  = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -177,15 +181,20 @@ export const refreshToken = async (req, res) => {
 
     // generate new access token
     const newAccessToken = generateAccessToken(user._id);
-       const newRefreshToken = generateRefreshToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
 
-         user.refreshToken = newRefreshToken;
-         await user.save();
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
-           res.cookie("refreshToken", newRefreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+      sameSite:
+        process.env.NODE_ENV === "production" // cross-domain in prod
+          ? "none"
+          : "lax",
+      path: "/",
     });
 
     res.status(200).json({
@@ -206,14 +215,21 @@ export const refreshToken = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
- if (refreshToken) {
+    if (refreshToken) {
       const user = await User.findOne({ refreshToken: refreshToken });
 
       if (user) {
-        user.refreshToken = null;//this makes user logout
+        user.refreshToken = null; //this makes user logout
         await user.save();
       }
     }
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+    });
 
     res.status(200).json({
       success: true,

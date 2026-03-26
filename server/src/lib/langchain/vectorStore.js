@@ -5,6 +5,9 @@ import logger from "../logger.js";
 
 // get vector store instance for a specific course
 export const getVectorStore = () => {
+  if (!mongoose.connection.db) {
+    throw new Error("MongoDB not connected yet");
+  }
   const collection = mongoose.connection.db.collection("chapterchunks");
 
   return new MongoDBAtlasVectorSearch(getEmbeddings(), {

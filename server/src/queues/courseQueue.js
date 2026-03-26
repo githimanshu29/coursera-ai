@@ -1,19 +1,20 @@
 import Bull from "bull";
 import logger from "../lib/logger.js";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const courseQueue = new Bull("course-generation", {
-  redis: {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: process.env.REDIS_PORT || 6379,
-  },
+  redis: isProduction
+    ? process.env.UPSTASH_REDIS_URL
+    : {
+        host: process.env.REDIS_HOST || "127.0.0.1",
+        port: parseInt(process.env.REDIS_PORT) || 6379,
+      },
   defaultJobOptions: {
-    attempts: 1,
-    backoff: {
-      type: "exponential",
-      delay: 3000, // 3s then 6s
-    },
-    removeOnComplete: 50, // keep last 50 completed jobs
-    removeOnFail: 100, // keep last 100 failed jobs
+    attempts: 2,
+    backoff: { type: "exponential", delay: 3000 },
+    removeOnComplete: 50,
+    removeOnFail: 100,
   },
 });
 

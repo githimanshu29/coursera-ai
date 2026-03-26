@@ -59,6 +59,6 @@ export const createChapterRAGStream = async (
   }
 
   const token = localStorage.getItem("accessToken");
-  const url = `http://localhost:5005/api/courses/generate-chapter-rag/${courseId}?token=${token}&userInstruction=${encodeURIComponent(userInstruction)}`;
+  const url = `${import.meta.env.VITE_API_URL || "http://localhost:5005/api"}/courses/generate-chapter-rag/${courseId}?token=${token}&userInstruction=${encodeURIComponent(userInstruction)}`;
   return new EventSource(url);
 };

@@ -25,26 +25,28 @@ const logger = winston.createLogger({
   format: combine(
     timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     errors({ stack: true }),
-    logFormat
+    logFormat,
   ),
   transports: [
-    // console — colored in dev
     new winston.transports.Console({
       format: combine(colorize(), timestamp({ format: "HH:mm:ss" }), logFormat),
     }),
-    // all logs file
-    new winston.transports.File({
-      filename: path.join(logsDir, "combined.log"),
-      maxsize: 5 * 1024 * 1024, // 5MB
-      maxFiles: 3,
-    }),
-    // errors only file
-    new winston.transports.File({
-      filename: path.join(logsDir, "error.log"),
-      level: "error",
-      maxsize: 5 * 1024 * 1024,
-      maxFiles: 3,
-    }),
+    // file transports only in development
+    ...(process.env.NODE_ENV !== "production"
+      ? [
+          new winston.transports.File({
+            filename: path.join(logsDir, "combined.log"),
+            maxsize: 5 * 1024 * 1024,
+            maxFiles: 3,
+          }),
+          new winston.transports.File({
+            filename: path.join(logsDir, "error.log"),
+            level: "error",
+            maxsize: 5 * 1024 * 1024,
+            maxFiles: 3,
+          }),
+        ]
+      : []),
   ],
 });
 
