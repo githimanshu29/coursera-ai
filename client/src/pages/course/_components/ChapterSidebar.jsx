@@ -433,7 +433,7 @@ const ChapterSidebar = ({
                             )}
                           </div>
 
-                          <span
+                          {/* <span
                             style={{
                               color: isActiveTopic
                                 ? "white"
@@ -445,7 +445,65 @@ const ChapterSidebar = ({
                             }}
                           >
                             {topic}
-                          </span>
+                          </span> */}
+
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: isActiveTopic
+                                  ? "white"
+                                  : isCompleted
+                                    ? "#a78bfa"
+                                    : "#6b7280",
+                                fontSize: "11px",
+                                lineHeight: "1.4",
+                              }}
+                            >
+                              {topic}
+                            </span>
+
+                            {/* 🔥 QUIZ + ARROW INDICATOR */}
+                            {tIndex === chapter.topics.length - 1 && (
+                              <span
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  fontSize: "9px",
+                                  padding: "2px 6px",
+                                  borderRadius: "999px",
+                                  background: "rgba(124,58,237,0.15)",
+                                  border: "1px solid rgba(124,58,237,0.3)",
+                                  color: "#a78bfa",
+                                  fontWeight: "600",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                Quiz
+                                {/* ↓ arrow */}
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="#a78bfa"
+                                  strokeWidth="2"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 9l6 6 6-6"
+                                  />
+                                </svg>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
