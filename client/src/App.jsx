@@ -11,6 +11,7 @@ import CourseView from "./pages/course/CourseView.jsx";
 
 import Landing from "./pages/LandingPage.jsx";
 import StepBuildCourse from "./pages/workspace/StepBuilderCourse.jsx";
+import MyQuizzes from "./pages/workspace/MyQuizzes.jsx";
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
       {/* workspace routes — have sidebar layout */}
       <Route element={<ProtectedRoute />}>
         <Route element={<WorkspaceLayout />}>
+          <Route path="/workspace/quizzes" element={<MyQuizzes />} />
           <Route path="/workspace" element={<Dashboard />} />
           <Route path="/workspace/my-learning" element={<Dashboard />} />
           <Route

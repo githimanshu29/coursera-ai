@@ -1,7 +1,5 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
-
-//for quiz
 import { useQuery } from "@tanstack/react-query";
 import { generateQuizApi, getCourseQuizStatusApi } from "../../../lib/api.js";
 import QuizModal from "./QuizModal.jsx";
@@ -14,17 +12,27 @@ const ChapterContent = ({
 }) => {
   const chapter = course?.courseContent?.[activeChapterIndex];
   const chapterLayout = course?.courseJson?.chapters?.[activeChapterIndex];
-  const topicContent = chapter?.courseData?.content?.[activeTopicIndex];
   const videos = chapter?.youtubeVideo || [];
 
   const [isMobile, setIsMobile] = useState(false);
-
-  //for quiz
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizData, setQuizData] = useState(null);
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
   const [quizResult, setQuizResult] = useState(null);
+  const [showFinalQuiz, setShowFinalQuiz] = useState(false);
+  const [finalQuizData, setFinalQuizData] = useState(null);
+  const [isLoadingFinalQuiz, setIsLoadingFinalQuiz] = useState(false);
 
+  // ── derived values ────────────────────────────────────────
+  const currentChapter = course?.courseJson?.chapters?.[activeChapterIndex];
+  const totalTopicsInChapter = currentChapter?.topics?.length || 0;
+  // const totalTopicsInChapter = chapter?.courseData?.content?.length || 0;
+  const isLastTopic = activeTopicIndex === totalTopicsInChapter - 1;
+  const totalChapters = course?.courseJson?.chapters?.length || 0;
+  const isLastChapter = activeChapterIndex === totalChapters - 1;
+  const isFullyComplete = course?.status === "READY";
+
+  // ── quiz status query ─────────────────────────────────────
   const { data: quizStatus, refetch: refetchQuizStatus } = useQuery({
     queryKey: ["quizStatus", course?.cid],
     queryFn: async () => {
@@ -38,6 +46,8 @@ const ChapterContent = ({
     (q) => q.chapterIndex === activeChapterIndex,
   );
 
+  const finalQuizStatus = quizStatus?.find((q) => q.chapterIndex === -1);
+
   const handleOpenQuiz = async () => {
     setIsLoadingQuiz(true);
     try {
@@ -48,6 +58,19 @@ const ChapterContent = ({
       console.error(err);
     } finally {
       setIsLoadingQuiz(false);
+    }
+  };
+
+  const handleOpenFinalQuiz = async () => {
+    setIsLoadingFinalQuiz(true);
+    try {
+      const res = await generateQuizApi(course.cid, -1);
+      setFinalQuizData(res.data.quiz);
+      setShowFinalQuiz(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingFinalQuiz(false);
     }
   };
 
@@ -189,7 +212,6 @@ const ChapterContent = ({
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
-                  {/* thumbnail */}
                   <div
                     style={{
                       position: "relative",
@@ -209,7 +231,6 @@ const ChapterContent = ({
                         objectFit: "cover",
                       }}
                     />
-                    {/* play button overlay */}
                     <div
                       style={{
                         position: "absolute",
@@ -235,8 +256,6 @@ const ChapterContent = ({
                       </svg>
                     </div>
                   </div>
-
-                  {/* title */}
                   <div
                     style={{
                       padding: "10px 12px",
@@ -316,10 +335,9 @@ const ChapterContent = ({
           </div>
         </div>
 
-        {/* topic content */}
+        {/* ── topic cards loop ── */}
         {chapter?.courseData?.content?.map((topicData, tIndex) => {
           const isActive = tIndex === activeTopicIndex;
-          const topicKey = `${activeChapterIndex}_${tIndex}`;
 
           return (
             <div
@@ -340,7 +358,7 @@ const ChapterContent = ({
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: isMobile ? "flex-start" : "flex-start",
+                  alignItems: "flex-start",
                   marginBottom: "16px",
                   flexDirection: isMobile ? "column" : "row",
                   gap: isMobile ? "12px" : "0",
@@ -429,7 +447,7 @@ const ChapterContent = ({
                 </button>
               </div>
 
-              {/* html content — with study-content class for enhanced typography */}
+              {/* html content */}
               <div
                 className="study-content"
                 dangerouslySetInnerHTML={{ __html: topicData?.htmlContent }}
@@ -475,119 +493,255 @@ const ChapterContent = ({
                   </svg>
                   Mark as Complete
                 </button>
-
-                <div style={{ marginTop: "16px" }}>
-                  {currentQuizStatus?.attempted ? (
-                    // already attempted — show score badge
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "12px 16px",
-                        borderRadius: "10px",
-                        background: currentQuizStatus.passed
-                          ? "rgba(34,197,94,0.08)"
-                          : "rgba(248,113,113,0.08)",
-                        border: `1px solid ${
-                          currentQuizStatus.passed
-                            ? "rgba(34,197,94,0.2)"
-                            : "rgba(248,113,113,0.2)"
-                        }`,
-                      }}
-                    >
-                      <span style={{ fontSize: "20px" }}>
-                        {currentQuizStatus.passed ? "🏆" : "📝"}
-                      </span>
-                      <div>
-                        <p
-                          style={{
-                            color: currentQuizStatus.passed
-                              ? "#4ade80"
-                              : "#f87171",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                          }}
-                        >
-                          Quiz: {currentQuizStatus.score}%
-                          {currentQuizStatus.passed
-                            ? " — Passed!"
-                            : " — Not passed"}
-                        </p>
-                        <p style={{ color: "#6b7280", fontSize: "11px" }}>
-                          {currentQuizStatus.passed
-                            ? "Badge earned for this chapter"
-                            : "Score 80%+ to earn badge"}
-                        </p>
-                      </div>
-                    </div>
-                  ) : currentQuizStatus?.skipped ? (
-                    <p style={{ color: "#6b7280", fontSize: "12px" }}>
-                      Quiz skipped for this chapter
-                    </p>
-                  ) : (
-                    <button
-                      onClick={handleOpenQuiz}
-                      disabled={isLoadingQuiz}
-                      style={{
-                        width: "100%",
-                        padding: "11px",
-                        borderRadius: "10px",
-                        background: "rgba(124,58,237,0.12)",
-                        border: "1px solid rgba(124,58,237,0.3)",
-                        color: "#a78bfa",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "8px",
-                        transition: "background 0.2s",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(124,58,237,0.2)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(124,58,237,0.12)")
-                      }
-                    >
-                      {isLoadingQuiz ? (
-                        <>
-                          <span
-                            style={{
-                              width: "14px",
-                              height: "14px",
-                              border: "2px solid rgba(167,139,250,0.3)",
-                              borderTop: "2px solid #a78bfa",
-                              borderRadius: "50%",
-                              display: "inline-block",
-                              animation: "spin 0.7s linear infinite",
-                            }}
-                          />
-                          Generating quiz...
-                        </>
-                      ) : (
-                        <>📝 Take Chapter Quiz</>
-                      )}
-                    </button>
-                  )}
-                </div>
-                {showQuiz && quizData && (
-                  <QuizModal
-                    quiz={quizData}
-                    onClose={() => setShowQuiz(false)}
-                    onComplete={handleQuizComplete}
-                  />
-                )}
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
             </div>
           );
         })}
+
+        {/* ── CHAPTER QUIZ — only after last topic ── */}
+        {isLastTopic && (
+          <div style={{ marginTop: "8px", marginBottom: "16px" }}>
+            {currentQuizStatus?.attempted ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "16px 20px",
+                  borderRadius: "12px",
+                  background: currentQuizStatus.passed
+                    ? "rgba(34,197,94,0.08)"
+                    : "rgba(248,113,113,0.08)",
+                  border: `1px solid ${
+                    currentQuizStatus.passed
+                      ? "rgba(34,197,94,0.2)"
+                      : "rgba(248,113,113,0.2)"
+                  }`,
+                }}
+              >
+                <span style={{ fontSize: "24px" }}>
+                  {currentQuizStatus.passed ? "🏆" : "📝"}
+                </span>
+                <div>
+                  <p
+                    style={{
+                      color: currentQuizStatus.passed ? "#4ade80" : "#f87171",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Chapter Quiz: {currentQuizStatus.score}%
+                    {currentQuizStatus.passed ? " — Passed!" : " — Not passed"}
+                  </p>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "12px",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {currentQuizStatus.passed
+                      ? "Badge earned for this chapter ✓"
+                      : "Score 80%+ to earn the chapter badge"}
+                  </p>
+                </div>
+              </div>
+            ) : currentQuizStatus?.skipped ? (
+              <div
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                <p style={{ color: "#6b7280", fontSize: "13px" }}>
+                  Quiz skipped for this chapter.
+                  <button
+                    onClick={handleOpenQuiz}
+                    style={{
+                      marginLeft: "8px",
+                      background: "transparent",
+                      border: "none",
+                      color: "#a78bfa",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Take it now?
+                  </button>
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={handleOpenQuiz}
+                disabled={isLoadingQuiz}
+                style={{
+                  width: "100%",
+                  padding: "13px",
+                  borderRadius: "12px",
+                  background: "rgba(124,58,237,0.12)",
+                  border: "1px solid rgba(124,58,237,0.3)",
+                  color: "#a78bfa",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: isLoadingQuiz ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(124,58,237,0.2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "rgba(124,58,237,0.12)")
+                }
+              >
+                {isLoadingQuiz ? (
+                  <>
+                    <span
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid rgba(167,139,250,0.3)",
+                        borderTop: "2px solid #a78bfa",
+                        borderRadius: "50%",
+                        display: "inline-block",
+                        animation: "spin 0.7s linear infinite",
+                      }}
+                    />
+                    Generating quiz...
+                  </>
+                ) : (
+                  <>📝 Take Chapter Quiz</>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── FINAL QUIZ — only on last topic of last chapter ── */}
+        {isLastTopic && isLastChapter && isFullyComplete && (
+          <div
+            style={{
+              marginTop: "24px",
+              padding: "20px 24px",
+              borderRadius: "16px",
+              background: "rgba(124,58,237,0.08)",
+              border: "1px solid rgba(124,58,237,0.2)",
+            }}
+          >
+            {finalQuizStatus?.attempted ? (
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "14px" }}
+              >
+                <span style={{ fontSize: "32px" }}>
+                  {finalQuizStatus.passed ? "🎓" : "📋"}
+                </span>
+                <div>
+                  <p
+                    style={{
+                      color: finalQuizStatus.passed ? "#4ade80" : "#f87171",
+                      fontSize: "16px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    Final Quiz: {finalQuizStatus.score}%
+                    {finalQuizStatus.passed
+                      ? " — Course Completed!"
+                      : " — Not passed"}
+                  </p>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "13px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {finalQuizStatus.passed
+                      ? "You've mastered this course!"
+                      : "Score 80%+ to earn the course completion badge"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "16px",
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      color: "white",
+                      fontSize: "16px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    Course Complete — Take the Final Quiz!
+                  </p>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "13px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Test your knowledge across the entire course. Score 80%+ to
+                    earn the course badge.
+                  </p>
+                </div>
+                <button
+                  onClick={handleOpenFinalQuiz}
+                  disabled={isLoadingFinalQuiz}
+                  style={{
+                    padding: "10px 24px",
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                    border: "none",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: isLoadingFinalQuiz ? "not-allowed" : "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {isLoadingFinalQuiz ? "Generating..." : "🏆 Take Final Quiz"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* quiz modals */}
+      {showQuiz && quizData && (
+        <QuizModal
+          quiz={quizData}
+          onClose={() => setShowQuiz(false)}
+          onComplete={handleQuizComplete}
+        />
+      )}
+
+      {showFinalQuiz && finalQuizData && (
+        <QuizModal
+          quiz={finalQuizData}
+          onClose={() => setShowFinalQuiz(false)}
+          onComplete={(result) => {
+            handleQuizComplete(result);
+            setShowFinalQuiz(false);
+          }}
+        />
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

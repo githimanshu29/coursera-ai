@@ -7,7 +7,7 @@ export const getCourseQuizStatus = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   const quizzes = await Quiz.find({ courseId, userId }).select(
-    "chapterIndex chapterName attempted skipped score passed",
+    "chapterIndex chapterName attempted skipped score passed questions userAnswers",
   );
 
   res.json({ success: true, quizzes });
