@@ -9,21 +9,40 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { jsonrepair } from "jsonrepair";
 import logger from "../logger.js";
 
-// const getLLM = () =>
-//   new ChatGoogleGenerativeAI({
-//     apiKey: process.env.GEMINI_API_KEY,
-//     model: "gemini-2.5-flash-lite",
-//     temperature: 0.7,
-//     maxOutputTokens: 8192,
-//   });
+const GROQ_MODELS = new Set([
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
+]);
 
-const getLLM = () =>
-  new ChatGroq({
+const GEMINI_MODELS = new Set(["gemini-2.5-flash-lite", "gemini-2.5-flash"]);
+
+const resolveModel = (provider, model) => {
+  if (provider === "gemini") {
+    return GEMINI_MODELS.has(model) ? model : "gemini-2.5-flash-lite";
+  }
+
+  return GROQ_MODELS.has(model) ? model : "llama-3.3-70b-versatile";
+};
+
+const getLLM = ({ provider = "groq", model = "" } = {}) => {
+  const resolvedModel = resolveModel(provider, model);
+
+  if (provider === "gemini") {
+    return new ChatGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      model: resolvedModel,
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+    });
+  }
+
+  return new ChatGroq({
     apiKey: process.env.GROQ_API_KEY,
-    model: "llama-3.3-70b-versatile", // best free model
+    model: resolvedModel,
     temperature: 0.7,
     maxTokens: 8192,
   });
+};
 
 // ── Prompt template ───────────────────────────────────────────
 const CHAPTER_PROMPT = ChatPromptTemplate.fromTemplate(`
@@ -139,8 +158,8 @@ const formatRetrievedContext = (chunks) => {
     .join("\n\n");
 };
 
-export const buildRagChain = () => {
-  const llm = getLLM();
+export const buildRagChain = (options = {}) => {
+  const llm = getLLM(options);
   const outputParser = new StringOutputParser();
 
   const chain = RunnableSequence.from([
@@ -166,8 +185,10 @@ export const generateChapterWithRAG = async ({
   topics,
   retrievedChunks,
   userInstruction,
+  provider,
+  model,
 }) => {
-  const chain = buildRagChain();
+  const chain = buildRagChain({ provider, model });
 
   logger.info(
     `RAG chain running for chapter ${chapterNumber}: "${chapterName}"`,

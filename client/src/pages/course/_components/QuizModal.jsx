@@ -1,7 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
-import { submitQuizApi, skipQuizApi, retakeQuizApi, generateQuizApi } from "../../../lib/api.js";
+import {
+  submitQuizApi,
+  skipQuizApi,
+  retakeQuizApi,
+  generateQuizApi,
+} from "../../../lib/api.js";
 
-const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
+const QuizModal = ({
+  quiz,
+  onClose,
+  onComplete,
+  courseId,
+  chapterIndex,
+  modelProvider,
+  modelName,
+  onError,
+}) => {
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState(
     Array(quiz.questions.length).fill(null),
@@ -111,7 +125,10 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
     setIsRetaking(true);
     try {
       await retakeQuizApi(quiz._id);
-      const res = await generateQuizApi(courseId, chapterIndex);
+      const res = await generateQuizApi(courseId, chapterIndex, {
+        provider: modelProvider,
+        model: modelName,
+      });
       const newQuiz = res.data.quiz;
       // Reset state with new quiz data
       setAnswers(Array(newQuiz.questions.length).fill(null));
@@ -123,6 +140,7 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
       if (onComplete) onComplete({ retake: true, newQuiz });
     } catch (err) {
       console.error(err);
+      if (onError) onError(err);
     } finally {
       setIsRetaking(false);
     }
@@ -227,7 +245,14 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
 
       {/* Confetti overlay */}
       {showConfetti && (
-        <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 1001 }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 1001,
+          }}
+        >
           {Array.from({ length: 30 }).map((_, i) => (
             <div
               key={i}
@@ -238,7 +263,14 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                 width: `${6 + Math.random() * 8}px`,
                 height: `${6 + Math.random() * 8}px`,
                 borderRadius: Math.random() > 0.5 ? "50%" : "2px",
-                background: ["#7c3aed", "#4ade80", "#f59e0b", "#ec4899", "#06b6d4", "#f87171"][i % 6],
+                background: [
+                  "#7c3aed",
+                  "#4ade80",
+                  "#f59e0b",
+                  "#ec4899",
+                  "#06b6d4",
+                  "#f87171",
+                ][i % 6],
                 animation: `quizConfettiPiece ${1 + Math.random() * 2}s ease-out ${Math.random() * 0.5}s forwards`,
               }}
             />
@@ -249,7 +281,8 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
       <div
         className="quiz-modal-scrollbar"
         style={{
-          background: "linear-gradient(180deg, #0f172a 0%, #131b30 50%, #1a1f36 100%)",
+          background:
+            "linear-gradient(180deg, #0f172a 0%, #131b30 50%, #1a1f36 100%)",
           border: "1px solid rgba(124,58,237,0.25)",
           borderRadius: "28px",
           width: "100%",
@@ -279,7 +312,14 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
             }}
           >
             <div style={{ flex: 1, minWidth: "180px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "6px",
+                }}
+              >
                 <div
                   style={{
                     width: "32px",
@@ -292,8 +332,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                     flexShrink: 0,
                   }}
                 >
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="white"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
                   </svg>
                 </div>
                 <div>
@@ -307,7 +358,13 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   >
                     {quiz.chapterName}
                   </h2>
-                  <p style={{ color: "#6b7280", fontSize: "12px", marginTop: "2px" }}>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "12px",
+                      marginTop: "2px",
+                    }}
+                  >
                     {result
                       ? "Quiz Complete — Review your answers"
                       : `Question ${currentQ + 1} of ${quiz.questions.length}`}
@@ -330,10 +387,28 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                     border: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
-                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#6b7280" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    width="12"
+                    height="12"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="#6b7280"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
-                  <span style={{ color: "#9ca3af", fontSize: "12px", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>
+                  <span
+                    style={{
+                      color: "#9ca3af",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
                     {formatTime(timeElapsed)}
                   </span>
                 </div>
@@ -362,8 +437,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   e.currentTarget.style.color = "#6b7280";
                 }}
               >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -396,7 +482,15 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
             </div>
 
             {/* Question dot indicators */}
-            <div style={{ display: "flex", gap: "6px", alignItems: "center", marginTop: "10px", justifyContent: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                alignItems: "center",
+                marginTop: "10px",
+                justifyContent: "center",
+              }}
+            >
               {quiz.questions.map((_, i) => (
                 <button
                   key={i}
@@ -422,15 +516,26 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                           ? "#a78bfa"
                           : "rgba(255,255,255,0.1)",
                     transition: "all 0.3s cubic-bezier(.25,.8,.25,1)",
-                    animation: i === currentQ && !result ? "quizPulse 2s ease-in-out infinite" : "none",
+                    animation:
+                      i === currentQ && !result
+                        ? "quizPulse 2s ease-in-out infinite"
+                        : "none",
                   }}
                 />
               ))}
             </div>
 
             {!result && (
-              <p style={{ color: "#4b5563", fontSize: "11px", textAlign: "center", marginTop: "6px" }}>
-                {answeredCount}/{quiz.questions.length} answered · Use arrow keys to navigate
+              <p
+                style={{
+                  color: "#4b5563",
+                  fontSize: "11px",
+                  textAlign: "center",
+                  marginTop: "6px",
+                }}
+              >
+                {answeredCount}/{quiz.questions.length} answered · Use arrow
+                keys to navigate
               </p>
             )}
           </div>
@@ -470,9 +575,24 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                 }}
               />
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "16px",
+                }}
+              >
                 <div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "6px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "8px",
+                      marginBottom: "6px",
+                    }}
+                  >
                     <span
                       style={{
                         color: result.passed ? "#4ade80" : "#f87171",
@@ -484,12 +604,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                     >
                       {result.score}%
                     </span>
-                    <span style={{ color: result.passed ? "#4ade80" : "#f87171", fontSize: "16px", fontWeight: "600" }}>
+                    <span
+                      style={{
+                        color: result.passed ? "#4ade80" : "#f87171",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                      }}
+                    >
                       {result.passed ? "Passed!" : "Not passed"}
                     </span>
                   </div>
                   <p style={{ color: "#6b7280", fontSize: "13px" }}>
-                    {result.correct}/{result.total} correct · Time: {formatTime(timeElapsed)}
+                    {result.correct}/{result.total} correct · Time:{" "}
+                    {formatTime(timeElapsed)}
                   </p>
                 </div>
 
@@ -537,7 +664,13 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                 marginBottom: "16px",
               }}
             >
-              <span style={{ color: "#a78bfa", fontSize: "12px", fontWeight: "700" }}>
+              <span
+                style={{
+                  color: "#a78bfa",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                }}
+              >
                 Q{currentQ + 1}
               </span>
               {result && (
@@ -569,7 +702,9 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
             </p>
 
             {/* ─ Options ─ */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
               {q.options.map((option, i) => {
                 const isSelected = answers[currentQ] === i;
                 const isCorrect = result && i === resultQ?.correctIndex;
@@ -601,7 +736,9 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   <div
                     key={i}
                     onClick={() => handleSelect(i)}
-                    className={!result && !isSelected ? "quiz-option-hover" : ""}
+                    className={
+                      !result && !isSelected ? "quiz-option-hover" : ""
+                    }
                     style={{
                       padding: "14px 18px",
                       borderRadius: "14px",
@@ -612,7 +749,8 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                       alignItems: "center",
                       gap: "14px",
                       transition: "all 0.25s cubic-bezier(.25,.8,.25,1)",
-                      transform: isSelected && !result ? "scale(1.01)" : "scale(1)",
+                      transform:
+                        isSelected && !result ? "scale(1.01)" : "scale(1)",
                       animation: `quizOptionIn 0.3s ease ${i * 0.06}s both`,
                     }}
                   >
@@ -659,8 +797,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                           animation: "quizPop 0.4s ease",
                         }}
                       >
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#4ade80" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        <svg
+                          width="14"
+                          height="14"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="#4ade80"
+                          strokeWidth="3"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
                         </svg>
                       </span>
                     )}
@@ -677,8 +826,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                           justifyContent: "center",
                         }}
                       >
-                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#f87171" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          width="12"
+                          height="12"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="#f87171"
+                          strokeWidth="3"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </span>
                     )}
@@ -699,7 +859,14 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   animation: "quizSlideRight 0.4s ease",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "8px",
+                  }}
+                >
                   <div
                     style={{
                       width: "22px",
@@ -711,15 +878,39 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                       justifyContent: "center",
                     }}
                   >
-                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      width="12"
+                      height="12"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="#a78bfa"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
-                  <span style={{ color: "#a78bfa", fontSize: "12px", fontWeight: "700", letterSpacing: "0.3px" }}>
+                  <span
+                    style={{
+                      color: "#a78bfa",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      letterSpacing: "0.3px",
+                    }}
+                  >
                     EXPLANATION
                   </span>
                 </div>
-                <p style={{ color: "#c4b5fd", fontSize: "13px", lineHeight: "1.7" }}>
+                <p
+                  style={{
+                    color: "#c4b5fd",
+                    fontSize: "13px",
+                    lineHeight: "1.7",
+                  }}
+                >
                   {resultQ.explanation}
                 </p>
               </div>
@@ -740,10 +931,27 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   animation: "quizShake 0.5s ease",
                 }}
               >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#fbbf24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="#fbbf24"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
-                <span style={{ color: "#fbbf24", fontSize: "12px", fontWeight: "500" }}>
+                <span
+                  style={{
+                    color: "#fbbf24",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                  }}
+                >
                   Please answer this question before submitting
                 </span>
               </div>
@@ -782,8 +990,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                 gap: "6px",
               }}
             >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Previous
             </button>
@@ -796,9 +1015,15 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                 borderRadius: "10px",
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)",
-                color: currentQ === quiz.questions.length - 1 ? "#1f2937" : "#9ca3af",
+                color:
+                  currentQ === quiz.questions.length - 1
+                    ? "#1f2937"
+                    : "#9ca3af",
                 fontSize: "13px",
-                cursor: currentQ === quiz.questions.length - 1 ? "not-allowed" : "pointer",
+                cursor:
+                  currentQ === quiz.questions.length - 1
+                    ? "not-allowed"
+                    : "pointer",
                 fontWeight: "500",
                 transition: "all 0.2s",
                 display: "flex",
@@ -808,8 +1033,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
               }}
             >
               Next
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>
@@ -833,11 +1069,13 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                     fontWeight: "500",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+                    e.currentTarget.style.borderColor =
+                      "rgba(255,255,255,0.15)";
                     e.currentTarget.style.color = "#9ca3af";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.borderColor =
+                      "rgba(255,255,255,0.08)";
                     e.currentTarget.style.color = "#6b7280";
                   }}
                 >
@@ -870,12 +1108,15 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   onMouseEnter={(e) => {
                     if (allAnswered) {
                       e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(124,58,237,0.4)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 28px rgba(124,58,237,0.4)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = allAnswered ? "0 4px 20px rgba(124,58,237,0.3)" : "none";
+                    e.currentTarget.style.boxShadow = allAnswered
+                      ? "0 4px 20px rgba(124,58,237,0.3)"
+                      : "none";
                   }}
                 >
                   {isSubmitting ? (
@@ -895,8 +1136,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                     </>
                   ) : allAnswered ? (
                     <>
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                       Submit Quiz
                     </>
@@ -930,13 +1182,17 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                     }}
                     onMouseEnter={(e) => {
                       if (!isRetaking) {
-                        e.currentTarget.style.background = "rgba(124,58,237,0.1)";
-                        e.currentTarget.style.borderColor = "rgba(124,58,237,0.5)";
+                        e.currentTarget.style.background =
+                          "rgba(124,58,237,0.1)";
+                        e.currentTarget.style.borderColor =
+                          "rgba(124,58,237,0.5)";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                      e.currentTarget.style.borderColor = "rgba(124,58,237,0.3)";
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.04)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(124,58,237,0.3)";
                     }}
                   >
                     {isRetaking ? (
@@ -956,8 +1212,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                       </>
                     ) : (
                       <>
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        <svg
+                          width="16"
+                          height="16"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
                         </svg>
                         Attempt Again
                       </>
@@ -999,8 +1266,19 @@ const QuizModal = ({ quiz, onClose, onComplete, courseId, chapterIndex }) => {
                   }}
                 >
                   {result.passed ? "🎉 Continue" : "Continue anyway"}
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </button>
               </div>

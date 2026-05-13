@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateCourseLayoutApi } from "../../../lib/api.js";
 import { v4 as uuidv4 } from "uuid";
 
 const LEVELS = ["beginner", "moderate", "advanced"];
-const CATEGORIES = ["Technology", "Science", "Mathematics", "Language", "Business", "Arts", "Health", "Sports", "Other"];
+const CATEGORIES = [
+  "Technology",
+  "Science",
+  "Mathematics",
+  "Language",
+  "Business",
+  "Arts",
+  "Health",
+  "Sports",
+  "Other",
+];
+const MODEL_OPTIONS = {
+  groq: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"],
+  gemini: ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
+};
 
 const CreateCourseDialog = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -17,11 +31,25 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
     level: "beginner",
     noOfChapters: "",
     includeVideo: true,
+    modelProvider: "groq",
+    modelName: "llama-3.3-70b-versatile",
+    previewCourse: false,
+    previewPassword: "",
   });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
+  };
+
+  const handleProviderChange = (e) => {
+    const nextProvider = e.target.value;
+    const nextModel = MODEL_OPTIONS[nextProvider]?.[0] || "";
+    setFormData({
+      ...formData,
+      modelProvider: nextProvider,
+      modelName: nextModel,
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -30,7 +58,11 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
     setError("");
     try {
       const cid = uuidv4();
-      await generateCourseLayoutApi({ cid, ...formData, noOfChapters: Number(formData.noOfChapters) });
+      await generateCourseLayoutApi({
+        cid,
+        ...formData,
+        noOfChapters: Number(formData.noOfChapters),
+      });
       onClose();
       navigate(`/workspace/edit-course/${cid}`);
     } catch (err) {
@@ -59,6 +91,18 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
     fontWeight: "500",
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    setError("");
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isOpen]);
+
+  const showPreviewHint = /credit|quota|limit|429|402/i.test(error || "");
+
   if (!isOpen) return null;
 
   return (
@@ -72,9 +116,11 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
         backdropFilter: "blur(4px)",
         zIndex: 100,
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         justifyContent: "center",
-        padding: "16px",
+        padding: "24px 16px",
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch",
       }}
     >
       {/* dialog card — stop click propagation */}
@@ -83,6 +129,8 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
         style={{
           width: "100%",
           maxWidth: "480px",
+          maxHeight: "90vh",
+          overflowY: "auto",
           background: "#111827",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: "20px",
@@ -92,18 +140,24 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
           fontFamily: "'Inter', sans-serif",
         }}
       >
-
         {/* close button */}
         <button
           onClick={onClose}
           style={{
-            position: "absolute", top: "16px", right: "16px",
+            position: "absolute",
+            top: "16px",
+            right: "16px",
             background: "rgba(255,255,255,0.05)",
-            border: "none", color: "#6b7280",
-            width: "32px", height: "32px",
-            borderRadius: "8px", cursor: "pointer",
-            display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: "18px",
+            border: "none",
+            color: "#6b7280",
+            width: "32px",
+            height: "32px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "18px",
             transition: "all 0.2s",
           }}
           onMouseEnter={(e) => {
@@ -119,16 +173,33 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
         </button>
 
         {/* header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-          <div style={{
-            width: "40px", height: "40px",
-            background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-            borderRadius: "12px",
-            display: "flex", alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 15px rgba(124,58,237,0.4)",
-            fontSize: "20px",
-          }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "24px",
+          }}
+        >
+          <style>{`
+            @keyframes attentionGlow {
+              0%, 100% { box-shadow: 0 0 0 1px rgba(124,58,237,0.25), 0 0 6px rgba(124,58,237,0.15); }
+              50% { box-shadow: 0 0 0 1px rgba(124,58,237,0.4), 0 0 10px rgba(124,58,237,0.25); }
+            }
+          `}</style>
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 15px rgba(124,58,237,0.4)",
+              fontSize: "20px",
+            }}
+          >
             ✦
           </div>
           <div>
@@ -143,40 +214,73 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
 
         {/* error */}
         {error && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: "8px",
-            background: "rgba(239,68,68,0.1)",
-            border: "1px solid rgba(239,68,68,0.2)",
-            color: "#f87171", fontSize: "12px",
-            padding: "10px 14px", borderRadius: "10px",
-            marginBottom: "16px",
-          }}>
-            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20" style={{ flexShrink: 0 }}>
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "rgba(239,68,68,0.1)",
+              border: "1px solid rgba(239,68,68,0.2)",
+              color: "#f87171",
+              fontSize: "12px",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              marginBottom: "16px",
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              style={{ flexShrink: 0 }}
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
             </svg>
-            {error}
+            <div>
+              <div>{error}</div>
+              {showPreviewHint && (
+                <div style={{ color: "#fbbf24", marginTop: "4px" }}>
+                  API credits might be exhausted — explore preview courses.
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+        >
           {/* course name */}
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
             <label style={labelStyle}>Course Name</label>
             <input
-              type="text" name="name"
+              type="text"
+              name="name"
               placeholder="e.g. Introduction to Quantum Computing"
               value={formData.name}
-              onChange={handleChange} required
+              onChange={handleChange}
+              required
               style={inputStyle}
-              onFocus={(e) => e.target.style.borderColor = "rgba(124,58,237,0.7)"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(75,85,99,0.5)"}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+              }
             />
           </div>
 
           {/* description */}
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            <label style={labelStyle}>Description <span style={{ color: "#4b5563" }}>(optional)</span></label>
+            <label style={labelStyle}>
+              Description <span style={{ color: "#4b5563" }}>(optional)</span>
+            </label>
             <textarea
               name="description"
               placeholder="A brief summary of what the course is about"
@@ -188,27 +292,120 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
                 resize: "none",
                 lineHeight: "1.5",
               }}
-              onFocus={(e) => e.target.style.borderColor = "rgba(124,58,237,0.7)"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(75,85,99,0.5)"}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+              }
             />
+          </div>
+
+          {/* model selection */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <label style={labelStyle}>Model Provider</label>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+              }}
+            >
+              <select
+                name="modelProvider"
+                value={formData.modelProvider}
+                onChange={handleProviderChange}
+                disabled={isLoading}
+                style={{
+                  ...inputStyle,
+                  cursor: "pointer",
+                  appearance: "none",
+                  opacity: isLoading ? 0.6 : 1,
+                  animation: "attentionGlow 2.4s ease-in-out infinite",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+                }
+              >
+                <option value="groq" style={{ background: "#111827" }}>
+                  Groq
+                </option>
+                <option value="gemini" style={{ background: "#111827" }}>
+                  Gemini
+                </option>
+              </select>
+              <select
+                name="modelName"
+                value={formData.modelName}
+                onChange={handleChange}
+                disabled={isLoading}
+                style={{
+                  ...inputStyle,
+                  cursor: "pointer",
+                  appearance: "none",
+                  opacity: isLoading ? 0.6 : 1,
+                  animation: "attentionGlow 2.4s ease-in-out infinite",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+                }
+              >
+                {MODEL_OPTIONS[formData.modelProvider].map((model) => (
+                  <option
+                    key={model}
+                    value={model}
+                    style={{ background: "#111827" }}
+                  >
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* chapters + level row */}
           <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+              }}
+            >
               <label style={labelStyle}>No. of Chapters</label>
               <input
-                type="number" name="noOfChapters"
+                type="number"
+                name="noOfChapters"
                 placeholder="e.g. 10"
                 value={formData.noOfChapters}
                 onChange={handleChange}
-                min="1" max="20" required
+                min="1"
+                max="20"
+                required
                 style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = "rgba(124,58,237,0.7)"}
-                onBlur={(e) => e.target.style.borderColor = "rgba(75,85,99,0.5)"}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+                }
               />
             </div>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+              }}
+            >
               <label style={labelStyle}>Difficulty Level</label>
               <select
                 name="level"
@@ -219,8 +416,12 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
                   cursor: "pointer",
                   appearance: "none",
                 }}
-                onFocus={(e) => e.target.style.borderColor = "rgba(124,58,237,0.7)"}
-                onBlur={(e) => e.target.style.borderColor = "rgba(75,85,99,0.5)"}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+                }
               >
                 {LEVELS.map((l) => (
                   <option key={l} value={l} style={{ background: "#111827" }}>
@@ -244,70 +445,221 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
                 cursor: "pointer",
                 appearance: "none",
               }}
-              onFocus={(e) => e.target.style.borderColor = "rgba(124,58,237,0.7)"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(75,85,99,0.5)"}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "rgba(124,58,237,0.7)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+              }
             >
-              <option value="" style={{ background: "#111827" }}>Select a category</option>
+              <option value="" style={{ background: "#111827" }}>
+                Select a category
+              </option>
               {CATEGORIES.map((c) => (
-                <option key={c} value={c} style={{ background: "#111827" }}>{c}</option>
+                <option key={c} value={c} style={{ background: "#111827" }}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
 
           {/* include video toggle */}
-          <div style={{
-            display: "flex", alignItems: "center",
-            justifyContent: "space-between",
-            background: "rgba(31,41,55,0.8)",
-            border: "1px solid rgba(75,85,99,0.5)",
-            borderRadius: "10px", padding: "12px 14px",
-          }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "rgba(31,41,55,0.8)",
+              border: "1px solid rgba(75,85,99,0.5)",
+              borderRadius: "10px",
+              padding: "12px 14px",
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                width="16"
+                height="16"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="#a78bfa"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
-              <span style={{ color: "#d1d5db", fontSize: "13px" }}>Include Video Content</span>
+              <span style={{ color: "#d1d5db", fontSize: "13px" }}>
+                Include Video Content
+              </span>
             </div>
             {/* toggle switch */}
             <div
-              onClick={() => setFormData({ ...formData, includeVideo: !formData.includeVideo })}
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  includeVideo: !formData.includeVideo,
+                })
+              }
               style={{
-                width: "40px", height: "22px",
+                width: "40px",
+                height: "22px",
                 borderRadius: "11px",
-                background: formData.includeVideo ? "#7c3aed" : "rgba(75,85,99,0.5)",
-                position: "relative", cursor: "pointer",
+                background: formData.includeVideo
+                  ? "#7c3aed"
+                  : "rgba(75,85,99,0.5)",
+                position: "relative",
+                cursor: "pointer",
                 transition: "background 0.2s",
               }}
             >
-              <div style={{
-                position: "absolute",
-                top: "3px",
-                left: formData.includeVideo ? "21px" : "3px",
-                width: "16px", height: "16px",
-                borderRadius: "50%",
-                background: "white",
-                transition: "left 0.2s",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
-              }} />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3px",
+                  left: formData.includeVideo ? "21px" : "3px",
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "50%",
+                  background: "white",
+                  transition: "left 0.2s",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                }}
+              />
             </div>
           </div>
+
+          {/* preview course toggle */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "rgba(17,24,39,0.7)",
+              border: "1px solid rgba(251,146,60,0.3)",
+              borderRadius: "10px",
+              padding: "12px 14px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <svg
+                width="16"
+                height="16"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="#fb923c"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 8c-1.657 0-3 .895-3 2v2a3 3 0 006 0v-2c0-1.105-1.343-2-3-2z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 12a7 7 0 1114 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4z"
+                />
+              </svg>
+              <div>
+                <span style={{ color: "#e5e7eb", fontSize: "13px" }}>
+                  Preview course (public)
+                </span>
+                <p
+                  style={{
+                    color: "#fbbf24",
+                    fontSize: "11px",
+                    marginTop: "2px",
+                  }}
+                >
+                  Requires preview password
+                </p>
+              </div>
+            </div>
+            <div
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  previewCourse: !formData.previewCourse,
+                })
+              }
+              style={{
+                width: "40px",
+                height: "22px",
+                borderRadius: "11px",
+                background: formData.previewCourse
+                  ? "#f97316"
+                  : "rgba(75,85,99,0.5)",
+                position: "relative",
+                cursor: "pointer",
+                transition: "background 0.2s",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3px",
+                  left: formData.previewCourse ? "21px" : "3px",
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "50%",
+                  background: "white",
+                  transition: "left 0.2s",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                }}
+              />
+            </div>
+          </div>
+
+          {formData.previewCourse && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "5px" }}
+            >
+              <label style={labelStyle}>Preview Password</label>
+              <input
+                type="password"
+                name="previewPassword"
+                placeholder="Enter preview password"
+                value={formData.previewPassword}
+                onChange={handleChange}
+                required
+                style={inputStyle}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(251,146,60,0.7)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(75,85,99,0.5)")
+                }
+              />
+            </div>
+          )}
 
           {/* submit button */}
           <button
             type="submit"
             disabled={isLoading}
             style={{
-              width: "100%", padding: "13px",
+              width: "100%",
+              padding: "13px",
               borderRadius: "12px",
               background: isLoading
                 ? "rgba(124,58,237,0.5)"
                 : "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              border: "none", color: "white",
-              fontSize: "14px", fontWeight: "600",
+              border: "none",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "600",
               cursor: isLoading ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center",
-              justifyContent: "center", gap: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
               marginTop: "4px",
               boxShadow: "0 4px 20px rgba(124,58,237,0.3)",
               transition: "all 0.2s",
@@ -321,14 +673,17 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
           >
             {isLoading ? (
               <>
-                <span style={{
-                  width: "17px", height: "17px",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderTop: "2px solid white",
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  animation: "spin 0.7s linear infinite",
-                }} />
+                <span
+                  style={{
+                    width: "17px",
+                    height: "17px",
+                    border: "2px solid rgba(255,255,255,0.3)",
+                    borderTop: "2px solid white",
+                    borderRadius: "50%",
+                    display: "inline-block",
+                    animation: "spin 0.7s linear infinite",
+                  }}
+                />
                 Generating Course...
               </>
             ) : (

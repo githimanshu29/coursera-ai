@@ -1,7 +1,7 @@
 import Course from "../../models/Course.js";
 // import ai from "../../lib/groq.js";
 
-import { generateWithGroq } from "../../lib/groq.js";
+import { generateWithModel } from "../../lib/groq.js";
 import { jsonrepair } from "jsonrepair";
 import logger from "../../lib/logger.js";
 const PROMPT = `Generate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
@@ -54,7 +54,22 @@ export const generateCourseLayout = async (req, res) => {
       level,
       noOfChapters,
       includeVideo,
+      modelProvider,
+      modelName,
+      previewCourse,
+      previewPassword,
     } = req.body;
+
+    if (previewCourse) {
+      const expected = (process.env.PREVIEW_COURSE_PASSWORD || "").trim();
+      const provided = (previewPassword || "").toString().trim();
+      if (!expected || provided !== expected) {
+        return res.status(403).json({
+          success: false,
+          message: "Invalid preview course password",
+        });
+      }
+    }
 
     const userInput = JSON.stringify({
       name,
@@ -65,8 +80,12 @@ export const generateCourseLayout = async (req, res) => {
       includeVideo,
     });
 
-    // ── Call Groq ──
-    const rawResp = await generateWithGroq(PROMPT + userInput);
+    // ── Call selected model ──
+    const rawResp = await generateWithModel({
+      prompt: PROMPT + userInput,
+      provider: modelProvider || "groq",
+      model: modelName,
+    });
 
     // ── Clean + repair + parse ──
     const cleaned = rawResp.replace(/```json\s*|\s*```/g, "").trim();
@@ -100,6 +119,7 @@ export const generateCourseLayout = async (req, res) => {
       includeVideo: courseDetails.includeVideo || false,
       bannerImagePrompt: courseDetails.bannerImagePrompt,
       courseJson: courseDetails,
+      previewCourse: !!previewCourse,
       createdBy: req.user._id,
     });
 

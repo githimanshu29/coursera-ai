@@ -8,7 +8,7 @@ const sendEvent = (res, event, data) => {
 
 export const generateChapterRAG = async (req, res) => {
   const { courseId } = req.params;
-  const { userInstruction = "" } = req.query;
+  const { userInstruction = "", provider = "groq", model = "" } = req.query;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -43,18 +43,25 @@ export const generateChapterRAG = async (req, res) => {
     course.status = "BUILDING";
     await course.save();
 
+    const providerLabel = provider === "gemini" ? "Gemini" : "Groq";
+    const modelLabel = model ? `${model}` : "default";
+
     sendEvent(res, "status", {
       step: "queued",
       message: `Chapter ${chapterIndex + 1}/${totalChapters}: "${currentChapter.chapterName}" queued`,
       chapterIndex,
       totalChapters,
       userInstruction: userInstruction || "none",
+      provider: providerLabel,
+      model: modelLabel,
     });
 
     const job = await courseQueue.add("generate-chapter", {
       courseId,
       chapterIndex,
       userInstruction,
+      provider,
+      model,
       userId: req.user._id.toString(),
     });
 
@@ -76,7 +83,7 @@ export const generateChapterRAG = async (req, res) => {
         const messages = {
           0: "Job picked up — worker processing...",
           10: "Searching previous chapters via semantic search...",
-          25: "Context retrieved — generating with Gemini...",
+          25: `Context retrieved — generating with ${providerLabel} (${modelLabel})...`,
           50: "Content generated — creating embeddings...",
           75: "Vectors stored — fetching YouTube videos...",
           90: "Saving to database...",

@@ -1,5 +1,5 @@
 import Course from "../../models/Course.js";
-import { generateWithGroq } from "../../lib/groq.js";
+import { generateWithModel } from "../../lib/groq.js";
 import axios from "axios";
 import { jsonrepair } from "jsonrepair";
 import logger from "../../lib/logger.js";
@@ -66,6 +66,7 @@ const getYoutubeVideos = async (topic) => {
 export const generateCourseContent = async (req, res) => {
   try {
     const { courseId } = req.params;
+    const { provider, model } = req.body || {};
 
     const course = await Course.findOne({ cid: courseId });
     if (!course) {
@@ -79,8 +80,12 @@ export const generateCourseContent = async (req, res) => {
 
     // ── Process all chapters simultaneously ──
     const promises = chapters.map(async (chapter) => {
-      // ── Call Groq ──
-      const rawResp = await generateWithGroq(PROMPT + JSON.stringify(chapter));
+      // ── Call selected model ──
+      const rawResp = await generateWithModel({
+        prompt: PROMPT + JSON.stringify(chapter),
+        provider: provider || "groq",
+        model,
+      });
 
       // ── Clean + repair + parse ──
       const cleaned = rawResp.replace(/```json\s*|\s*```/g, "").trim();

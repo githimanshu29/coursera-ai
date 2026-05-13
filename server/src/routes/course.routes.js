@@ -4,6 +4,7 @@ import { generateCourseContent } from "../controllers/course/generateCourseConte
 import {
   getCourseById,
   getUserCourses,
+  getPreviewCourses,
 } from "../controllers/course/getUserCourses.js";
 import { deleteCourse } from "../controllers/course/deleteCourse.js";
 import { protect } from "../middleware/auth.js";
@@ -24,6 +25,7 @@ router.post(
   generateCourseContent,
 );
 router.get("/user-courses", protect, cacheMiddleware(600), getUserCourses);
+router.get("/preview", getPreviewCourses);
 
 router.get(
   "/generate-chapter-rag/:courseId",

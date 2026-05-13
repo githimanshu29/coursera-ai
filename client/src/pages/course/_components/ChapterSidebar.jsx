@@ -8,6 +8,7 @@ const ChapterSidebar = ({
   activeChapterIndex,
   activeTopicIndex,
   onTopicClick,
+  onScrollToQuiz,
   isOpen,
   onClose,
   isMobile,
@@ -483,6 +484,13 @@ const ChapterSidebar = ({
                                   color: "#a78bfa",
                                   fontWeight: "600",
                                   whiteSpace: "nowrap",
+                                  cursor: "pointer",
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onScrollToQuiz) {
+                                    onScrollToQuiz(chIndex);
+                                  }
                                 }}
                               >
                                 Quiz

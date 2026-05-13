@@ -14,6 +14,7 @@ const courseSchema = new mongoose.Schema(
     noOfChapters: { type: Number, required: true },
     includeVideo: { type: Boolean, default: false },
     bannerImagePrompt: { type: String, default: "" },
+    previewCourse: { type: Boolean, default: false },
 
     // Step 1 — AI generated layout (chapters + topics structure)
 

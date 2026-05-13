@@ -52,3 +52,24 @@ export const getUserCourses = async (req, res) => {
     });
   }
 };
+
+// public preview courses
+export const getPreviewCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({ previewCourse: true }).sort({
+      createdAt: -1,
+    });
+
+    res.status(200).json({
+      success: true,
+      courses,
+    });
+  } catch (error) {
+    console.error("getPreviewCourses error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch preview courses",
+      error: error.message,
+    });
+  }
+};

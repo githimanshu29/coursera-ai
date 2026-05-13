@@ -1,7 +1,11 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { generateQuizApi, getCourseQuizStatusApi, retakeQuizApi } from "../../../lib/api.js";
+import {
+  generateQuizApi,
+  getCourseQuizStatusApi,
+  retakeQuizApi,
+} from "../../../lib/api.js";
 import QuizModal from "./QuizModal.jsx";
 
 const ChapterContent = ({
@@ -13,6 +17,10 @@ const ChapterContent = ({
   const chapter = course?.courseContent?.[activeChapterIndex];
   const chapterLayout = course?.courseJson?.chapters?.[activeChapterIndex];
   const videos = chapter?.youtubeVideo || [];
+  const MODEL_OPTIONS = {
+    groq: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"],
+    gemini: ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
+  };
 
   const [isMobile, setIsMobile] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -24,6 +32,11 @@ const ChapterContent = ({
   const [isLoadingFinalQuiz, setIsLoadingFinalQuiz] = useState(false);
   const [isRetakingChapter, setIsRetakingChapter] = useState(false);
   const [isRetakingFinal, setIsRetakingFinal] = useState(false);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [quizModelProvider, setQuizModelProvider] = useState("groq");
+  const [quizModelName, setQuizModelName] = useState(MODEL_OPTIONS.groq[1]);
+  const [quizError, setQuizError] = useState(null);
 
   // ── derived values ────────────────────────────────────────
   const currentChapter = course?.courseJson?.chapters?.[activeChapterIndex];
@@ -50,14 +63,28 @@ const ChapterContent = ({
 
   const finalQuizStatus = quizStatus?.find((q) => q.chapterIndex === -1);
 
+  const getQuizErrorMessage = (err) =>
+    err?.response?.data?.message || err?.message || "Failed to generate quiz";
+
+  const openQuizError = (err, type) => {
+    setQuizError({
+      message: getQuizErrorMessage(err),
+      type,
+    });
+  };
+
   const handleOpenQuiz = async () => {
     setIsLoadingQuiz(true);
     try {
-      const res = await generateQuizApi(course.cid, activeChapterIndex);
+      const res = await generateQuizApi(course.cid, activeChapterIndex, {
+        provider: quizModelProvider,
+        model: quizModelName,
+      });
       setQuizData(res.data.quiz);
       setShowQuiz(true);
     } catch (err) {
       console.error(err);
+      openQuizError(err, "chapter");
     } finally {
       setIsLoadingQuiz(false);
     }
@@ -66,11 +93,15 @@ const ChapterContent = ({
   const handleOpenFinalQuiz = async () => {
     setIsLoadingFinalQuiz(true);
     try {
-      const res = await generateQuizApi(course.cid, -1);
+      const res = await generateQuizApi(course.cid, -1, {
+        provider: quizModelProvider,
+        model: quizModelName,
+      });
       setFinalQuizData(res.data.quiz);
       setShowFinalQuiz(true);
     } catch (err) {
       console.error(err);
+      openQuizError(err, "final");
     } finally {
       setIsLoadingFinalQuiz(false);
     }
@@ -104,12 +135,16 @@ const ChapterContent = ({
     setIsRetakingChapter(true);
     try {
       await retakeQuizApi(currentQuizStatus._id);
-      const res = await generateQuizApi(course.cid, activeChapterIndex);
+      const res = await generateQuizApi(course.cid, activeChapterIndex, {
+        provider: quizModelProvider,
+        model: quizModelName,
+      });
       setQuizData(res.data.quiz);
       setShowQuiz(true);
       refetchQuizStatus();
     } catch (err) {
       console.error(err);
+      openQuizError(err, "chapter");
     } finally {
       setIsRetakingChapter(false);
     }
@@ -120,14 +155,45 @@ const ChapterContent = ({
     setIsRetakingFinal(true);
     try {
       await retakeQuizApi(finalQuizStatus._id);
-      const res = await generateQuizApi(course.cid, -1);
+      const res = await generateQuizApi(course.cid, -1, {
+        provider: quizModelProvider,
+        model: quizModelName,
+      });
       setFinalQuizData(res.data.quiz);
       setShowFinalQuiz(true);
       refetchQuizStatus();
     } catch (err) {
       console.error(err);
+      openQuizError(err, "final");
     } finally {
       setIsRetakingFinal(false);
+    }
+  };
+
+  const handleOpenVideo = (video) => {
+    setActiveVideo(video);
+    setIsVideoOpen(true);
+  };
+
+  const handleCloseVideo = () => {
+    setIsVideoOpen(false);
+    setActiveVideo(null);
+  };
+
+  const handleQuizProviderChange = (value) => {
+    setQuizModelProvider(value);
+    const nextModel = MODEL_OPTIONS[value]?.[0] || "";
+    setQuizModelName(nextModel);
+  };
+
+  const handleRetryQuiz = async () => {
+    if (!quizError) return;
+    const retryType = quizError.type;
+    setQuizError(null);
+    if (retryType === "final") {
+      await handleOpenFinalQuiz();
+    } else {
+      await handleOpenQuiz();
     }
   };
 
@@ -160,6 +226,12 @@ const ChapterContent = ({
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: "860px" }}>
+      <style>{`
+        @keyframes attentionGlow {
+          0%, 100% { box-shadow: 0 0 0 1px rgba(124,58,237,0.25), 0 0 6px rgba(124,58,237,0.15); }
+          50% { box-shadow: 0 0 0 1px rgba(124,58,237,0.4), 0 0 10px rgba(124,58,237,0.25); }
+        }
+      `}</style>
       {/* chapter badge */}
       <div style={{ marginBottom: "24px" }}>
         <span
@@ -239,12 +311,18 @@ const ChapterContent = ({
             }}
           >
             {videos.slice(0, 3).map((video, i) => (
-              <a
+              <button
                 key={i}
-                href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ textDecoration: "none" }}
+                type="button"
+                onClick={() => handleOpenVideo(video)}
+                style={{
+                  textDecoration: "none",
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
               >
                 <div
                   style={{
@@ -252,7 +330,6 @@ const ChapterContent = ({
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.08)",
                     transition: "border-color 0.2s, transform 0.2s",
-                    cursor: "pointer",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)";
@@ -329,8 +406,89 @@ const ChapterContent = ({
                     </p>
                   </div>
                 </div>
-              </a>
+              </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {isVideoOpen && activeVideo && (
+        <div
+          onClick={handleCloseVideo}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(4px)",
+            zIndex: 200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "900px",
+              background: "#0b1220",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "16px",
+              overflow: "hidden",
+              boxShadow: "0 30px 60px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 16px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <span
+                style={{
+                  color: "#e5e7eb",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                }}
+              >
+                {activeVideo.title}
+              </span>
+              <button
+                type="button"
+                onClick={handleCloseVideo}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "none",
+                  color: "#9ca3af",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ position: "relative", paddingTop: "56.25%" }}>
+              <iframe
+                title={activeVideo.title}
+                src={`https://www.youtube.com/embed/${activeVideo.videoId}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -552,7 +710,70 @@ const ChapterContent = ({
 
         {/* ── CHAPTER QUIZ — only after last topic ── */}
         {isLastTopic && (
-          <div style={{ marginTop: "8px", marginBottom: "16px" }}>
+          <div
+            id="chapter-quiz-section"
+            style={{ marginTop: "8px", marginBottom: "16px" }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+                marginBottom: "12px",
+              }}
+            >
+              <select
+                value={quizModelProvider}
+                onChange={(e) => handleQuizProviderChange(e.target.value)}
+                disabled={isLoadingQuiz || isRetakingChapter || isRetakingFinal}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: "10px",
+                  background: "rgba(31,41,55,0.8)",
+                  border: "1px solid rgba(75,85,99,0.5)",
+                  color: "white",
+                  fontSize: "12px",
+                  outline: "none",
+                  cursor: "pointer",
+                  animation: "attentionGlow 2.4s ease-in-out infinite",
+                  opacity:
+                    isLoadingQuiz || isRetakingChapter || isRetakingFinal
+                      ? 0.6
+                      : 1,
+                }}
+              >
+                <option value="groq">Groq</option>
+                <option value="gemini">Gemini</option>
+              </select>
+              <select
+                value={quizModelName}
+                onChange={(e) => setQuizModelName(e.target.value)}
+                disabled={isLoadingQuiz || isRetakingChapter || isRetakingFinal}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: "10px",
+                  background: "rgba(31,41,55,0.8)",
+                  border: "1px solid rgba(75,85,99,0.5)",
+                  color: "white",
+                  fontSize: "12px",
+                  outline: "none",
+                  cursor: "pointer",
+                  animation: "attentionGlow 2.4s ease-in-out infinite",
+                  opacity:
+                    isLoadingQuiz || isRetakingChapter || isRetakingFinal
+                      ? 0.6
+                      : 1,
+                }}
+              >
+                {MODEL_OPTIONS[quizModelProvider].map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </div>
             {currentQuizStatus?.attempted ? (
               <div
                 style={{
@@ -573,7 +794,14 @@ const ChapterContent = ({
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flex: 1,
+                  }}
+                >
                   <span style={{ fontSize: "24px" }}>
                     {currentQuizStatus.passed ? "🏆" : "📝"}
                   </span>
@@ -586,7 +814,9 @@ const ChapterContent = ({
                       }}
                     >
                       Chapter Quiz: {currentQuizStatus.score}%
-                      {currentQuizStatus.passed ? " — Passed!" : " — Not passed"}
+                      {currentQuizStatus.passed
+                        ? " — Passed!"
+                        : " — Not passed"}
                     </p>
                     <p
                       style={{
@@ -623,7 +853,8 @@ const ChapterContent = ({
                   onMouseEnter={(e) => {
                     if (!isRetakingChapter) {
                       e.currentTarget.style.background = "rgba(124,58,237,0.2)";
-                      e.currentTarget.style.borderColor = "rgba(124,58,237,0.4)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(124,58,237,0.4)";
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -648,8 +879,19 @@ const ChapterContent = ({
                     </>
                   ) : (
                     <>
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
                       </svg>
                       Retake Quiz
                     </>
@@ -736,6 +978,7 @@ const ChapterContent = ({
         {/* ── FINAL QUIZ — only on last topic of last chapter ── */}
         {isLastTopic && isLastChapter && isFullyComplete && (
           <div
+            id="final-quiz-section"
             style={{
               marginTop: "24px",
               padding: "20px 24px",
@@ -746,9 +989,22 @@ const ChapterContent = ({
           >
             {finalQuizStatus?.attempted ? (
               <div
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", flexWrap: "wrap" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "14px",
+                  flexWrap: "wrap",
+                }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "14px",
+                    flex: 1,
+                  }}
+                >
                   <span style={{ fontSize: "32px" }}>
                     {finalQuizStatus.passed ? "🎓" : "📋"}
                   </span>
@@ -823,8 +1079,19 @@ const ChapterContent = ({
                     </>
                   ) : (
                     <>
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
                       </svg>
                       Retake Final Quiz
                     </>
@@ -885,6 +1152,179 @@ const ChapterContent = ({
         )}
       </div>
 
+      {quizError && (
+        <div
+          onClick={() => setQuizError(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(4px)",
+            zIndex: 250,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              background: "#0b1220",
+              border: "1px solid rgba(248,113,113,0.3)",
+              borderRadius: "16px",
+              overflow: "hidden",
+              boxShadow: "0 30px 60px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 18px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    color: "#fca5a5",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                  }}
+                >
+                  Quiz generation failed
+                </p>
+                <p
+                  style={{
+                    color: "#9ca3af",
+                    fontSize: "12px",
+                    marginTop: "4px",
+                  }}
+                >
+                  {quizError.type === "final" ? "Final quiz" : "Chapter quiz"}{" "}
+                  could not be created.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuizError(null)}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "none",
+                  color: "#9ca3af",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: "16px 18px" }}>
+              <p
+                style={{
+                  color: "#e5e7eb",
+                  fontSize: "13px",
+                  marginBottom: "12px",
+                }}
+              >
+                {quizError.message}
+              </p>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "10px",
+                }}
+              >
+                <select
+                  value={quizModelProvider}
+                  onChange={(e) => handleQuizProviderChange(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    background: "rgba(31,41,55,0.8)",
+                    border: "1px solid rgba(75,85,99,0.5)",
+                    color: "white",
+                    fontSize: "12px",
+                    outline: "none",
+                    cursor: "pointer",
+                    animation: "attentionGlow 2.4s ease-in-out infinite",
+                  }}
+                >
+                  <option value="groq">Groq</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+                <select
+                  value={quizModelName}
+                  onChange={(e) => setQuizModelName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    background: "rgba(31,41,55,0.8)",
+                    border: "1px solid rgba(75,85,99,0.5)",
+                    color: "white",
+                    fontSize: "12px",
+                    outline: "none",
+                    cursor: "pointer",
+                    animation: "attentionGlow 2.4s ease-in-out infinite",
+                  }}
+                >
+                  {MODEL_OPTIONS[quizModelProvider].map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                <button
+                  type="button"
+                  onClick={handleRetryQuiz}
+                  style={{
+                    flex: 1,
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                    border: "none",
+                    color: "white",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Retry with selected model
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuizError(null)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#e5e7eb",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* quiz modals */}
       {showQuiz && quizData && (
         <QuizModal
@@ -893,6 +1333,9 @@ const ChapterContent = ({
           chapterIndex={activeChapterIndex}
           onClose={() => setShowQuiz(false)}
           onComplete={handleQuizComplete}
+          modelProvider={quizModelProvider}
+          modelName={quizModelName}
+          onError={(err) => openQuizError(err, "chapter")}
         />
       )}
 
@@ -903,6 +1346,9 @@ const ChapterContent = ({
           chapterIndex={-1}
           onClose={() => setShowFinalQuiz(false)}
           onComplete={handleFinalQuizComplete}
+          modelProvider={quizModelProvider}
+          modelName={quizModelName}
+          onError={(err) => openQuizError(err, "final")}
         />
       )}
 

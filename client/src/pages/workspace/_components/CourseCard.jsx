@@ -10,13 +10,18 @@ const CourseCard = ({
   // const navigate = useNavigate();
   const isReady = course.status === "READY";
   const isBuilding = course.status === "BUILDING";
+  const isPreview = course.previewCourse;
 
   return (
     <div
       className="course-card-uniform"
       style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: isPreview
+          ? "linear-gradient(160deg, rgba(251,146,60,0.12), rgba(15,23,42,0.95))"
+          : "rgba(255,255,255,0.03)",
+        border: isPreview
+          ? "1px solid rgba(251,146,60,0.35)"
+          : "1px solid rgba(255,255,255,0.08)",
         borderRadius: "16px",
         padding: "20px",
         display: "flex",
@@ -29,12 +34,18 @@ const CourseCard = ({
         overflow: "hidden",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "rgba(124,58,237,0.35)";
+        e.currentTarget.style.borderColor = isPreview
+          ? "rgba(251,146,60,0.55)"
+          : "rgba(124,58,237,0.35)";
         e.currentTarget.style.transform = "translateY(-3px)";
-        e.currentTarget.style.boxShadow = "0 12px 32px rgba(124,58,237,0.12)";
+        e.currentTarget.style.boxShadow = isPreview
+          ? "0 12px 32px rgba(251,146,60,0.18)"
+          : "0 12px 32px rgba(124,58,237,0.12)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+        e.currentTarget.style.borderColor = isPreview
+          ? "rgba(251,146,60,0.35)"
+          : "rgba(255,255,255,0.08)";
         e.currentTarget.style.transform = "translateY(0)";
         e.currentTarget.style.boxShadow = "none";
       }}
@@ -53,23 +64,39 @@ const CourseCard = ({
             borderRadius: "20px",
             fontSize: "11px",
             fontWeight: "600",
-            background: isReady
-              ? "rgba(34,197,94,0.1)"
-              : isBuilding
-                ? "rgba(124,58,237,0.1)"
-                : "rgba(234,179,8,0.1)",
-            color: isReady ? "#4ade80" : isBuilding ? "#a78bfa" : "#facc15",
-            border: `1px solid ${
-              isReady
-                ? "rgba(34,197,94,0.2)"
+            background: isPreview
+              ? "rgba(251,146,60,0.15)"
+              : isReady
+                ? "rgba(34,197,94,0.1)"
                 : isBuilding
-                  ? "rgba(124,58,237,0.2)"
-                  : "rgba(234,179,8,0.2)"
+                  ? "rgba(124,58,237,0.1)"
+                  : "rgba(234,179,8,0.1)",
+            color: isPreview
+              ? "#fdba74"
+              : isReady
+                ? "#4ade80"
+                : isBuilding
+                  ? "#a78bfa"
+                  : "#facc15",
+            border: `1px solid ${
+              isPreview
+                ? "rgba(251,146,60,0.35)"
+                : isReady
+                  ? "rgba(34,197,94,0.2)"
+                  : isBuilding
+                    ? "rgba(124,58,237,0.2)"
+                    : "rgba(234,179,8,0.2)"
             }`,
             letterSpacing: "0.5px",
           }}
         >
-          {isReady ? "READY" : isBuilding ? "BUILDING" : "SETUP REQUIRED"}
+          {isPreview
+            ? "PREVIEW"
+            : isReady
+              ? "READY"
+              : isBuilding
+                ? "BUILDING"
+                : "SETUP REQUIRED"}
         </span>
 
         <div
@@ -77,14 +104,16 @@ const CourseCard = ({
             width: "36px",
             height: "36px",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+            background: isPreview
+              ? "linear-gradient(135deg, #fb923c, #f97316)"
+              : "linear-gradient(135deg, #7c3aed, #6d28d9)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: "16px",
           }}
         >
-          🤖
+          {isPreview ? "👁" : "🤖"}
         </div>
       </div>
 
@@ -120,6 +149,22 @@ const CourseCard = ({
       >
         {course.description}
       </p>
+
+      {isPreview && (
+        <div
+          style={{
+            padding: "8px 10px",
+            borderRadius: "10px",
+            background: "rgba(251,146,60,0.12)",
+            border: "1px solid rgba(251,146,60,0.25)",
+            color: "#fbbf24",
+            fontSize: "11px",
+            lineHeight: "1.4",
+          }}
+        >
+          API credit gone? Use this course for preview.
+        </div>
+      )}
 
       {/* chapters count + progress for building courses */}
       <div
@@ -273,42 +318,43 @@ const CourseCard = ({
           </button>
         )}
 
-        {/* delete */}
-        <button
-          onClick={() => onDelete(course.cid)}
-          style={{
-            width: "100%",
-            padding: "8px",
-            background: "transparent",
-            border: "none",
-            color: "#6b7280",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-            transition: "color 0.2s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#6b7280")}
-        >
-          <svg
-            width="13"
-            height="13"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
+        {!isPreview && (
+          <button
+            onClick={() => onDelete(course.cid)}
+            style={{
+              width: "100%",
+              padding: "8px",
+              background: "transparent",
+              border: "none",
+              color: "#6b7280",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              transition: "color 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#6b7280")}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          Delete Course
-        </button>
+            <svg
+              width="13"
+              height="13"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Delete Course
+          </button>
+        )}
       </div>
     </div>
   );

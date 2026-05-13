@@ -6,6 +6,8 @@ const LiveBuildWindow = ({
   isGenerating,
   currentChapter,
   totalChapters,
+  title = "learnova — chapter builder",
+  showProgress = true,
 }) => {
   const logsEndRef = useRef(null);
   const [dots, setDots] = useState("");
@@ -50,7 +52,8 @@ const LiveBuildWindow = ({
   return (
     <div
       style={{
-        background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(13,19,33,0.9) 100%)",
+        background:
+          "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(13,19,33,0.9) 100%)",
         border: "1px solid rgba(124,58,237,0.2)",
         borderRadius: "16px",
         padding: "20px",
@@ -67,7 +70,8 @@ const LiveBuildWindow = ({
             position: "absolute",
             inset: "-1px",
             borderRadius: "16px",
-            background: "conic-gradient(from var(--angle, 0deg), #7c3aed, #a78bfa, #ec4899, #7c3aed)",
+            background:
+              "conic-gradient(from var(--angle, 0deg), #7c3aed, #a78bfa, #ec4899, #7c3aed)",
             opacity: 0.25,
             zIndex: 0,
             animation: "borderRotate 3s linear infinite",
@@ -102,9 +106,7 @@ const LiveBuildWindow = ({
               />
             ))}
           </div>
-          <span style={{ color: "#6b7280", fontSize: "11px" }}>
-            coursera-ai — chapter builder
-          </span>
+          <span style={{ color: "#6b7280", fontSize: "11px" }}>{title}</span>
           {isGenerating && (
             <div
               style={{
@@ -115,7 +117,9 @@ const LiveBuildWindow = ({
               }}
             >
               {/* Animated pulse dots */}
-              <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
+              <div
+                style={{ display: "flex", gap: "3px", alignItems: "center" }}
+              >
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
@@ -129,7 +133,13 @@ const LiveBuildWindow = ({
                   />
                 ))}
               </div>
-              <span style={{ color: "#a78bfa", fontSize: "11px", fontWeight: "600" }}>
+              <span
+                style={{
+                  color: "#a78bfa",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                }}
+              >
                 processing
               </span>
             </div>
@@ -137,7 +147,7 @@ const LiveBuildWindow = ({
         </div>
 
         {/* chapter progress */}
-        {totalChapters > 0 && (
+        {showProgress && totalChapters > 0 && (
           <div style={{ marginBottom: "14px" }}>
             <div
               style={{
@@ -149,7 +159,13 @@ const LiveBuildWindow = ({
               <span style={{ color: "#9ca3af", fontSize: "11px" }}>
                 Chapter {currentChapter}/{totalChapters}
               </span>
-              <span style={{ color: "#a78bfa", fontWeight: "600", fontSize: "11px" }}>
+              <span
+                style={{
+                  color: "#a78bfa",
+                  fontWeight: "600",
+                  fontSize: "11px",
+                }}
+              >
                 {Math.round((currentChapter / totalChapters) * 100)}%
               </span>
             </div>
@@ -165,7 +181,8 @@ const LiveBuildWindow = ({
                 style={{
                   height: "100%",
                   width: `${(currentChapter / totalChapters) * 100}%`,
-                  background: "linear-gradient(90deg, #7c3aed, #a78bfa, #c084fc)",
+                  background:
+                    "linear-gradient(90deg, #7c3aed, #a78bfa, #c084fc)",
                   borderRadius: "3px",
                   transition: "width 0.5s ease",
                   position: "relative",
@@ -173,11 +190,15 @@ const LiveBuildWindow = ({
                 }}
               >
                 {/* shimmer effect */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-                  animation: "progressShimmer 1.8s ease-in-out infinite",
-                }} />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                    animation: "progressShimmer 1.8s ease-in-out infinite",
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -206,10 +227,12 @@ const LiveBuildWindow = ({
                 alignItems: "flex-start",
                 padding: "3px 6px",
                 borderRadius: "6px",
-                background: i === dedupedLogs.length - 1 && isGenerating
-                  ? "rgba(124,58,237,0.06)"
-                  : "transparent",
-                animation: i === dedupedLogs.length - 1 ? "logFadeIn 0.3s ease" : "none",
+                background:
+                  i === dedupedLogs.length - 1 && isGenerating
+                    ? "rgba(124,58,237,0.06)"
+                    : "transparent",
+                animation:
+                  i === dedupedLogs.length - 1 ? "logFadeIn 0.3s ease" : "none",
               }}
             >
               <span
@@ -231,15 +254,17 @@ const LiveBuildWindow = ({
               >
                 {log.message}
                 {log.count > 1 && (
-                  <span style={{
-                    marginLeft: "8px",
-                    padding: "1px 6px",
-                    borderRadius: "10px",
-                    background: "rgba(124,58,237,0.15)",
-                    color: "#a78bfa",
-                    fontSize: "10px",
-                    fontWeight: "600",
-                  }}>
+                  <span
+                    style={{
+                      marginLeft: "8px",
+                      padding: "1px 6px",
+                      borderRadius: "10px",
+                      background: "rgba(124,58,237,0.15)",
+                      color: "#a78bfa",
+                      fontSize: "10px",
+                      fontWeight: "600",
+                    }}
+                  >
                     ×{log.count}
                   </span>
                 )}
@@ -258,14 +283,23 @@ const LiveBuildWindow = ({
                 marginTop: "4px",
               }}
             >
-              <div style={{
-                width: "14px", height: "14px",
-                border: "2px solid rgba(167,139,250,0.3)",
-                borderTop: "2px solid #a78bfa",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-              }} />
-              <span style={{ color: "#a78bfa", fontSize: "11px", fontStyle: "italic" }}>
+              <div
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  border: "2px solid rgba(167,139,250,0.3)",
+                  borderTop: "2px solid #a78bfa",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+              <span
+                style={{
+                  color: "#a78bfa",
+                  fontSize: "11px",
+                  fontStyle: "italic",
+                }}
+              >
                 AI is generating{dots}
               </span>
             </div>

@@ -1,12 +1,13 @@
 import Quiz from "../../models/Quiz.js";
 import Course from "../../models/Course.js";
-import { generateWithGroq } from "../../lib/groq.js";
+import { generateWithModel } from "../../lib/groq.js";
 import { jsonrepair } from "jsonrepair";
 import asyncHandler from "../../middleware/asyncHandler.js";
 import logger from "../../lib/logger.js";
 
 export const generateQuiz = asyncHandler(async (req, res) => {
   const { courseId, chapterIndex } = req.params;
+  const { provider, model } = req.query || {};
   const userId = req.user._id;
   const isFinal = chapterIndex === "-1";
 
@@ -84,8 +85,12 @@ Rules:
   ]
 }`;
 
-  // ── Call Groq ──
-  const rawResp = await generateWithGroq(prompt);
+  // ── Call selected model ──
+  const rawResp = await generateWithModel({
+    prompt,
+    provider: provider || "groq",
+    model,
+  });
 
   // ── Clean + repair + parse ──
   const cleaned = rawResp.replace(/```json\s*|\s*```/g, "").trim();

@@ -69,6 +69,17 @@ const CourseView = () => {
     setActiveTopicIndex(topicIndex);
   };
 
+  const handleScrollToQuiz = (chapterIndex) => {
+    const topics = course?.courseJson?.chapters?.[chapterIndex]?.topics || [];
+    const lastTopicIndex = Math.max(0, topics.length - 1);
+    setActiveChapterIndex(chapterIndex);
+    setActiveTopicIndex(lastTopicIndex);
+    setTimeout(() => {
+      const target = document.getElementById("chapter-quiz-section");
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  };
+
   const handleMarkComplete = (chapterIndex, topicIndex) => {
     markCompleteMutation.mutate({ chapterIndex, topicIndex });
   };
@@ -77,17 +88,32 @@ const CourseView = () => {
   const [showFinalQuiz, setShowFinalQuiz] = useState(false);
   const [finalQuizData, setFinalQuizData] = useState(null);
   const [isLoadingFinalQuiz, setIsLoadingFinalQuiz] = useState(false);
+  const MODEL_OPTIONS = {
+    groq: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"],
+    gemini: ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
+  };
+  const [quizModelProvider, setQuizModelProvider] = useState("groq");
+  const [quizModelName, setQuizModelName] = useState(MODEL_OPTIONS.groq[1]);
+  const [quizError, setQuizError] = useState(null);
 
   const isFullyComplete = course?.status === "READY";
 
   const handleFinalQuiz = async () => {
     setIsLoadingFinalQuiz(true);
     try {
-      const res = await generateQuizApi(course.cid, -1); // -1 = final quiz
+      const res = await generateQuizApi(course.cid, -1, {
+        provider: quizModelProvider,
+        model: quizModelName,
+      });
       setFinalQuizData(res.data.quiz);
       setShowFinalQuiz(true);
     } catch (err) {
       console.error(err);
+      setQuizError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to generate final quiz",
+      );
     } finally {
       setIsLoadingFinalQuiz(false);
     }
@@ -138,6 +164,12 @@ const CourseView = () => {
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      <style>{`
+        @keyframes attentionGlow {
+          0%, 100% { box-shadow: 0 0 0 1px rgba(124,58,237,0.25), 0 0 6px rgba(124,58,237,0.15); }
+          50% { box-shadow: 0 0 0 1px rgba(124,58,237,0.4), 0 0 10px rgba(124,58,237,0.25); }
+        }
+      `}</style>
       {/* sidebar */}
       <ChapterSidebar
         course={course}
@@ -145,6 +177,7 @@ const CourseView = () => {
         activeChapterIndex={activeChapterIndex}
         activeTopicIndex={activeTopicIndex}
         onTopicClick={handleTopicClick}
+        onScrollToQuiz={handleScrollToQuiz}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         isMobile={isMobile}
@@ -236,7 +269,7 @@ const CourseView = () => {
             <span
               style={{ color: "white", fontWeight: "700", fontSize: "16px" }}
             >
-              Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+              Learn<span style={{ color: "#a78bfa" }}>ova</span>
             </span>
           </div>
 
@@ -292,47 +325,287 @@ const CourseView = () => {
         {/* final quiz button */}
 
         {isFullyComplete && (
-  <div style={{
-    marginTop: "32px", padding: "20px 24px",
-    borderRadius: "16px",
-    background: "rgba(124,58,237,0.08)",
-    border: "1px solid rgba(124,58,237,0.2)",
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-  }}>
-    <div>
-      <p style={{ color: "white", fontSize: "16px", fontWeight: "700" }}>
-        Course Complete — Take the Final Quiz!
-      </p>
-      <p style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}>
-        Test your knowledge across the entire course. Score 80%+ to earn the course badge.
-      </p>
-    </div>
-    <button
-      onClick={handleFinalQuiz}
-      disabled={isLoadingFinalQuiz}
-      style={{
-        padding: "10px 20px", borderRadius: "10px",
-        background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-        border: "none", color: "white",
-        fontSize: "13px", fontWeight: "600",
-        cursor: "pointer", whiteSpace: "nowrap",
-      }}
-    >
-      {isLoadingFinalQuiz ? "Generating..." : "🏆 Final Quiz"}
-    </button>
-  </div>
-)}
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "20px 24px",
+              borderRadius: "16px",
+              background: "rgba(124,58,237,0.08)",
+              border: "1px solid rgba(124,58,237,0.2)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
+          >
+            <div>
+              <p
+                style={{ color: "white", fontSize: "16px", fontWeight: "700" }}
+              >
+                Course Complete — Take the Final Quiz!
+              </p>
+              <p
+                style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}
+              >
+                Test your knowledge across the entire course. Score 80%+ to earn
+                the course badge.
+              </p>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+              }}
+            >
+              <select
+                value={quizModelProvider}
+                onChange={(e) => {
+                  const nextProvider = e.target.value;
+                  setQuizModelProvider(nextProvider);
+                  setQuizModelName(MODEL_OPTIONS[nextProvider][0]);
+                }}
+                disabled={isLoadingFinalQuiz}
+                style={{
+                  padding: "8px 10px",
+                  borderRadius: "10px",
+                  background: "rgba(31,41,55,0.8)",
+                  border: "1px solid rgba(75,85,99,0.5)",
+                  color: "white",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  animation: "attentionGlow 2.4s ease-in-out infinite",
+                }}
+              >
+                <option value="groq">Groq</option>
+                <option value="gemini">Gemini</option>
+              </select>
+              <select
+                value={quizModelName}
+                onChange={(e) => setQuizModelName(e.target.value)}
+                disabled={isLoadingFinalQuiz}
+                style={{
+                  padding: "8px 10px",
+                  borderRadius: "10px",
+                  background: "rgba(31,41,55,0.8)",
+                  border: "1px solid rgba(75,85,99,0.5)",
+                  color: "white",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  animation: "attentionGlow 2.4s ease-in-out infinite",
+                }}
+              >
+                {MODEL_OPTIONS[quizModelProvider].map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleFinalQuiz}
+              disabled={isLoadingFinalQuiz}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                border: "none",
+                color: "white",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isLoadingFinalQuiz ? "Generating..." : "🏆 Final Quiz"}
+            </button>
+          </div>
+        )}
 
-{showFinalQuiz && finalQuizData && (
-  <QuizModal
-    quiz={finalQuizData}
-    courseId={course?.cid}
-    chapterIndex={-1}
-    onClose={() => setShowFinalQuiz(false)}
-    onComplete={(result) => console.log("Final quiz result:", result)}
-  />
-)}
+        {showFinalQuiz && finalQuizData && (
+          <QuizModal
+            quiz={finalQuizData}
+            courseId={course?.cid}
+            chapterIndex={-1}
+            onClose={() => setShowFinalQuiz(false)}
+            onComplete={(result) => console.log("Final quiz result:", result)}
+            modelProvider={quizModelProvider}
+            modelName={quizModelName}
+            onError={(err) =>
+              setQuizError(
+                err?.response?.data?.message ||
+                  err?.message ||
+                  "Failed to generate final quiz",
+              )
+            }
+          />
+        )}
 
+        {quizError && (
+          <div
+            onClick={() => setQuizError(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(4px)",
+              zIndex: 200,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "520px",
+                background: "#0b1220",
+                border: "1px solid rgba(248,113,113,0.3)",
+                borderRadius: "16px",
+                overflow: "hidden",
+                boxShadow: "0 30px 60px rgba(0,0,0,0.6)",
+              }}
+            >
+              <div
+                style={{
+                  padding: "16px 18px",
+                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#fca5a5",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                  }}
+                >
+                  Final quiz generation failed
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setQuizError(null)}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "none",
+                    color: "#9ca3af",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <div style={{ padding: "16px 18px" }}>
+                <p
+                  style={{
+                    color: "#e5e7eb",
+                    fontSize: "13px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {quizError}
+                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px",
+                  }}
+                >
+                  <select
+                    value={quizModelProvider}
+                    onChange={(e) => {
+                      const nextProvider = e.target.value;
+                      setQuizModelProvider(nextProvider);
+                      setQuizModelName(MODEL_OPTIONS[nextProvider][0]);
+                    }}
+                    style={{
+                      padding: "9px 12px",
+                      borderRadius: "10px",
+                      background: "rgba(31,41,55,0.8)",
+                      border: "1px solid rgba(75,85,99,0.5)",
+                      color: "white",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      animation: "attentionGlow 2.4s ease-in-out infinite",
+                    }}
+                  >
+                    <option value="groq">Groq</option>
+                    <option value="gemini">Gemini</option>
+                  </select>
+                  <select
+                    value={quizModelName}
+                    onChange={(e) => setQuizModelName(e.target.value)}
+                    style={{
+                      padding: "9px 12px",
+                      borderRadius: "10px",
+                      background: "rgba(31,41,55,0.8)",
+                      border: "1px solid rgba(75,85,99,0.5)",
+                      color: "white",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      animation: "attentionGlow 2.4s ease-in-out infinite",
+                    }}
+                  >
+                    {MODEL_OPTIONS[quizModelProvider].map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "16px" }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuizError(null);
+                      handleFinalQuiz();
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                      border: "none",
+                      color: "white",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Retry with selected model
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuizError(null)}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "#e5e7eb",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

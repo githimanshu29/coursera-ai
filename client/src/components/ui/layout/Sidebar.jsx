@@ -251,7 +251,7 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
               letterSpacing: "-0.3px",
             }}
           >
-            Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+            Learn<span style={{ color: "#a78bfa" }}>ova</span>
           </span>
         </div>
 

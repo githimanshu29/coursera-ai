@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   getUserCoursesApi,
+  getPreviewCoursesApi,
   getEnrolledCoursesApi,
   deleteCourseApi,
   enrollCourseApi,
@@ -16,6 +17,8 @@ import CreateCourseDialog from "./_components/CreateCourseDialog.jsx";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const previewRef = useRef(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // ── fetch user courses ────────────────────────────────────────────────────
@@ -43,6 +46,21 @@ const Dashboard = () => {
       return res.data.courses;
     },
   });
+
+  // ── fetch preview courses (public) ─────────────────────────────────────
+  const { data: previewData } = useQuery({
+    queryKey: ["previewCourses"],
+    queryFn: async () => {
+      const res = await getPreviewCoursesApi();
+      return res.data.courses;
+    },
+  });
+
+  useEffect(() => {
+    if (location?.state?.scrollToPreview && previewRef.current) {
+      previewRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location]);
 
   // ── handlers ──────────────────────────────────────────────────────────────
   const handleDeleteCourse = async (courseId) => {
@@ -114,6 +132,41 @@ const Dashboard = () => {
                     onDelete={handleDeleteEnrollment}
                   />
                 ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Preview Courses section ── */}
+      {previewData?.length > 0 && (
+        <div ref={previewRef} style={{ marginBottom: "40px" }}>
+          <div style={{ marginBottom: "16px" }}>
+            <h2
+              style={{ color: "#fbbf24", fontSize: "20px", fontWeight: "700" }}
+            >
+              Preview Courses
+            </h2>
+            <p style={{ color: "#9ca3af", fontSize: "13px", marginTop: "4px" }}>
+              API credit gone? Use these preview courses.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {previewData?.map((course, i) => (
+              <CourseCard
+                key={`preview-${i}`}
+                course={course}
+                onDelete={handleDeleteCourse}
+                onEnroll={handleEnroll}
+                onGenerateContent={handleGenerateContent}
+                onContinueBuilding={handleContinueBuilding}
+              />
+            ))}
           </div>
         </div>
       )}
