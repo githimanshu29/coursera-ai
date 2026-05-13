@@ -155,6 +155,12 @@ const WelcomeBanner = () => {
           50%       { box-shadow: 0 0 10px rgba(251,191,36,0.18); }
         }
 
+        @keyframes rowDrift {
+          0% { transform: translateX(-2px); }
+          50% { transform: translateX(2px); }
+          100% { transform: translateX(-2px); }
+        }
+
         @keyframes shimmer {
           0%   { background-position: -200% center; }
           100% { background-position: 200% center; }
@@ -173,7 +179,7 @@ const WelcomeBanner = () => {
           border-radius: 8px;
           background: rgba(0,0,0,0.25);
           border: 1px solid rgba(255,255,255,0.06);
-          animation: fadeSlideUp 0.5s ease forwards, glowPulse 3s ease-in-out infinite;
+          animation: fadeSlideUp 0.5s ease forwards, glowPulse 3s ease-in-out infinite, rowDrift 8s ease-in-out infinite;
           opacity: 0;
         }
         .notif-row:nth-child(1) { animation-delay: 0.1s, 0s; }

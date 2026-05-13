@@ -1,5 +1,6 @@
 import Course from "../../models/Course.js";
 import Enrollment from "../../models/Enrollment.js";
+import redis from "../../lib/redis.js";
 
 export const deleteCourse = async (req, res) => {
   try {
@@ -23,6 +24,13 @@ export const deleteCourse = async (req, res) => {
         success: false,
         message: "Course not found",
       });
+    }
+
+    try {
+      const cacheKeys = await redis.keys("cache:/api/courses*");
+      if (cacheKeys.length > 0) await redis.del(...cacheKeys);
+    } catch (cacheErr) {
+      console.error("deleteCourse cache clear error:", cacheErr.message);
     }
 
     res.status(200).json({

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   getUserCoursesApi,
@@ -19,6 +19,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const previewRef = useRef(null);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // ── fetch user courses ────────────────────────────────────────────────────
@@ -64,11 +65,15 @@ const Dashboard = () => {
 
   // ── handlers ──────────────────────────────────────────────────────────────
   const handleDeleteCourse = async (courseId) => {
+    queryClient.setQueryData(["userCourses"], (prev) =>
+      (prev || []).filter((course) => course.cid !== courseId),
+    );
     try {
       await deleteCourseApi(courseId);
-      refetchCourses();
+      queryClient.invalidateQueries({ queryKey: ["userCourses"] });
     } catch (err) {
       console.error("Delete course error:", err);
+      refetchCourses();
     }
   };
 
@@ -104,38 +109,6 @@ const Dashboard = () => {
       {/* welcome banner */}
       <WelcomeBanner />
 
-      {/* ── Continue Learning section ── */}
-      {(enrolledLoading || enrolledData?.length > 0) && (
-        <div style={{ marginBottom: "40px" }}>
-          <div style={{ marginBottom: "16px" }}>
-            <h2 style={{ color: "white", fontSize: "20px", fontWeight: "700" }}>
-              Continue Learning
-            </h2>
-            <p style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}>
-              Pick up where you left off
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: "16px",
-            }}
-          >
-            {enrolledLoading
-              ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
-              : enrolledData?.map((item, i) => (
-                  <EnrolledCourseCard
-                    key={i}
-                    item={item}
-                    onDelete={handleDeleteEnrollment}
-                  />
-                ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Preview Courses section ── */}
       {previewData?.length > 0 && (
         <div ref={previewRef} style={{ marginBottom: "40px" }}>
@@ -167,6 +140,38 @@ const Dashboard = () => {
                 onContinueBuilding={handleContinueBuilding}
               />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Continue Learning section ── */}
+      {(enrolledLoading || enrolledData?.length > 0) && (
+        <div style={{ marginBottom: "40px" }}>
+          <div style={{ marginBottom: "16px" }}>
+            <h2 style={{ color: "white", fontSize: "20px", fontWeight: "700" }}>
+              Continue Learning
+            </h2>
+            <p style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}>
+              Pick up where you left off
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {enrolledLoading
+              ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
+              : enrolledData?.map((item, i) => (
+                  <EnrolledCourseCard
+                    key={i}
+                    item={item}
+                    onDelete={handleDeleteEnrollment}
+                  />
+                ))}
           </div>
         </div>
       )}
