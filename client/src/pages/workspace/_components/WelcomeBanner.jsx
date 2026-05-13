@@ -334,11 +334,11 @@ const WelcomeBanner = () => {
             Note
           </span>
           <span className="notif-text" style={{ color: "#e0e7ff" }}>
-            For true course generation use{" "}
+            For true course generation and serious learning use{" "}
             <span style={{ color: "#818cf8", fontWeight: "600" }}>
               Gemini models
             </span>{" "}
-            — but note the lower token limit.
+            — but Gemini provides less token limit for free.
             <span style={{ color: "#818cf8", fontWeight: "600" }}>
               {" "}
               Preview courses are built with Gemini 🔥
