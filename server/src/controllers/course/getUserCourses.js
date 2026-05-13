@@ -1,4 +1,5 @@
 import Course from "../../models/Course.js";
+
 //get single course by courseId (cid)
 export const getCourseById = async (req, res) => {
   try {

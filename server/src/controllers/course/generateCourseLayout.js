@@ -1,7 +1,12 @@
 import Course from "../../models/Course.js";
-import ai from "../../lib/gemini.js";
+// import ai from "../../lib/groq.js";
 
-const PROMPT = `enerate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
+import { generateWithGroq } from "../../lib/groq.js";
+import { jsonrepair } from "jsonrepair";
+import logger from "../../lib/logger.js";
+const PROMPT = `Generate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
+
+Remember it is not neccessary that all the chapters have same number of topics, any  chapter can have different number of topics according to chapter's need.
 
 
 strict order: Generate layout such as the following error never appear-> "Error parsing AI response as JSON: course layout error SyntaxError: Unexpected token 'H', "Here's the"... is not valid JSON
@@ -51,54 +56,33 @@ export const generateCourseLayout = async (req, res) => {
       includeVideo,
     } = req.body;
 
-    // ── Call Gemini ──
-    const contents = [
-      {
-        role: "user",
-        parts: [
-          {
-            text:
-              PROMPT +
-              JSON.stringify({
-                name,
-                description,
-                category,
-                level,
-                noOfChapters,
-                includeVideo,
-              }),
-          },
-        ],
-      },
-    ];
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      config: {
-        thinkingConfig: { thinkingBudget: 0 },
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "text/plain",
-      },
-      contents,
+    const userInput = JSON.stringify({
+      name,
+      description,
+      category,
+      level,
+      noOfChapters,
+      includeVideo,
     });
 
-    const rawResp = response.candidates[0]?.content.parts[0]?.text; // .text is actuall text string from AI, which is in JSON format as per our prompt. but sometimes it may come with markdown fences (```json ... ```), so we need to clean it before parsing.
+    // ── Call Groq ──
+    const rawResp = await generateWithGroq(PROMPT + userInput);
 
-    // ── Clean markdown fences if present ──
-    const cleanJson = rawResp
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+    // ── Clean + repair + parse ──
+    const cleaned = rawResp.replace(/```json\s*|\s*```/g, "").trim();
 
     let parsedResp;
     try {
-      parsedResp = JSON.parse(cleanJson);
+      const repaired = jsonrepair(cleaned);
+      parsedResp = JSON.parse(repaired);
     } catch (parseError) {
-      console.error("JSON parse error(from generateCourseLayout):", parseError.message);
-      console.error("Raw AI response:", rawResp);
+      logger.error(
+        `generateCourseLayout JSON parse error: ${parseError.message}`,
+      );
+      logger.error(`Raw response: ${rawResp.slice(0, 300)}`);
       return res.status(500).json({
         success: false,
-        message: "AI returned invalid JSON (from -> generateCourseLayout)",
+        message: "AI returned invalid JSON",
         error: parseError.message,
       });
     }
@@ -119,13 +103,15 @@ export const generateCourseLayout = async (req, res) => {
       createdBy: req.user._id,
     });
 
+    logger.info(`Course layout generated — cid:${cid}`);
+
     res.status(201).json({
       success: true,
       message: "Course layout generated successfully",
       course,
     });
   } catch (error) {
-    console.error("generateCourseLayout error:", error.message);
+    logger.error(`generateCourseLayout error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: "Failed to generate course layout",
@@ -133,8 +119,6 @@ export const generateCourseLayout = async (req, res) => {
     });
   }
 };
-
-
 
 /*
  const cleanJson = rawResp

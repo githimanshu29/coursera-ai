@@ -1,6 +1,6 @@
 import Quiz from "../../models/Quiz.js";
 import Course from "../../models/Course.js";
-import ai from "../../lib/gemini.js";
+import { generateWithGroq } from "../../lib/groq.js";
 import { jsonrepair } from "jsonrepair";
 import asyncHandler from "../../middleware/asyncHandler.js";
 import logger from "../../lib/logger.js";
@@ -10,7 +10,7 @@ export const generateQuiz = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const isFinal = chapterIndex === "-1";
 
-  // check if quiz already exists
+  // ── check if quiz already exists ──
   const existing = await Quiz.findOne({
     courseId,
     chapterIndex: parseInt(chapterIndex),
@@ -18,7 +18,6 @@ export const generateQuiz = asyncHandler(async (req, res) => {
   });
 
   if (existing) {
-    // return existing quiz — without correctIndex if not yet attempted
     return res.json({
       success: true,
       quiz: sanitizeQuiz(existing),
@@ -29,8 +28,9 @@ export const generateQuiz = asyncHandler(async (req, res) => {
   const course = await Course.findOne({ cid: courseId });
   if (!course) return res.status(404).json({ message: "Course not found" });
 
-  // get chapter content for context
+  // ── build context ──
   let chapterName, contentContext;
+
   if (isFinal) {
     chapterName = `Final Quiz — ${course.name}`;
     contentContext = course.courseContent
@@ -55,20 +55,24 @@ export const generateQuiz = asyncHandler(async (req, res) => {
         .join("\n\n") || chapterName;
   }
 
-  // generate questions with Gemini
+  // ── build prompt ──
   const prompt = `You are an expert quiz creator for a course called "${course.name}" (${course.level} level).
 
 Generate exactly 5 multiple choice questions to test understanding of:
-${isFinal ? `The entire course covering:\n${contentContext}` : `Chapter: "${chapterName}"\n\nContent:\n${contentContext}`}
+${
+  isFinal
+    ? `The entire course covering:\n${contentContext}`
+    : `Chapter: "${chapterName}"\n\nContent:\n${contentContext}`
+}
 
 Rules:
-- Each question must have exactly 4 options (A, B, C, D)
+- Each question must have exactly 4 options
 - One correct answer per question
 - Include a clear explanation for the correct answer
-- Questions should test real understanding, not just memorization
+- Questions should test real understanding, not memorization
 - Difficulty should match ${course.level} level
+- Return ONLY valid JSON, no markdown, no extra text
 
-Return ONLY valid JSON, no markdown:
 {
   "questions": [
     {
@@ -80,21 +84,26 @@ Return ONLY valid JSON, no markdown:
   ]
 }`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    config: {
-      thinkingConfig: { thinkingBudget: 0 },
-      responseMimeType: "text/plain",
-    },
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  // ── Call Groq ──
+  const rawResp = await generateWithGroq(prompt);
 
-  const rawResp = response.candidates[0]?.content.parts[0]?.text || "";
+  // ── Clean + repair + parse ──
   const cleaned = rawResp.replace(/```json\s*|\s*```/g, "").trim();
-  const repaired = jsonrepair(cleaned);
-  const parsed = JSON.parse(repaired);
 
-  // save quiz to DB
+  let parsed;
+  try {
+    const repaired = jsonrepair(cleaned);
+    parsed = JSON.parse(repaired);
+  } catch (parseError) {
+    logger.error(`generateQuiz JSON parse error: ${parseError.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "AI returned invalid quiz JSON",
+      error: parseError.message,
+    });
+  }
+
+  // ── save quiz to DB ──
   const quiz = await Quiz.create({
     courseId,
     chapterIndex: parseInt(chapterIndex),
@@ -111,13 +120,13 @@ Return ONLY valid JSON, no markdown:
   });
 });
 
-// remove correctIndex before sending to frontend
+// ── hide correctIndex until attempted ──
 const sanitizeQuiz = (quiz) => {
   const obj = quiz.toObject ? quiz.toObject() : quiz;
   return {
     ...obj,
     questions: obj.attempted
-      ? obj.questions // if already attempted — reveal answers
+      ? obj.questions
       : obj.questions.map(({ correctIndex, ...rest }) => rest),
   };
 };

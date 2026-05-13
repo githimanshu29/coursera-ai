@@ -1,7 +1,8 @@
 import Course from "../../models/Course.js";
-import ai from "../../lib/gemini.js";
+import { generateWithGroq } from "../../lib/groq.js";
 import axios from "axios";
 import { jsonrepair } from "jsonrepair";
+import logger from "../../lib/logger.js";
 
 const PROMPT = `You are an expert and professional course creator and tutor.
 
@@ -12,7 +13,11 @@ strict order 1-> for each and every topic, even for small heading generate as mu
 
 strict order 2-> For definitions or introductory headings don't just generate some lines, you have to generate a vast content for each and every definition or introductory heading, you have to generate examples
 
-strict order 3-> Generate all the chapters provided to you with their topics and try to complete the entire course in given chapters, if chapters are less then generate more topics as you can inside a chapter and make it a complete course content. Take course from beginning to advance
+strict order 3-> Generate all the chapters provided to you with their topics and try to complete the entire course in given chapters, if chapters are less then generate more topics as you can inside a chapter and make it a complete course content. Take course from beginning to advance.
+
+Each should cover very vast knowledge as this is a learning platform here, so as much knowledge (content and text) you can generate please generate, each chapter's topic should not feel like this is very short just for shake of completing formality, beacause vast knowledge contains everyhing and helpful than less knowledge.
+
+Add real life examples if possible to explain topics.
 
 Rules:
 - Use double quotes for all keys and string values
@@ -34,7 +39,6 @@ Schema:
 User Input:
 `;
 
-
 const getYoutubeVideos = async (topic) => {
   try {
     const resp = await axios.get(
@@ -47,89 +51,70 @@ const getYoutubeVideos = async (topic) => {
           maxResults: 4,
           key: process.env.YOUTUBE_API_KEY,
         },
-      }
+      },
     );
-
     return resp.data.items.map((item) => ({
       videoId: item?.id?.videoId,
       title: item?.snippet?.title,
     }));
   } catch (error) {
-    console.error("YouTube fetch error for topic (from generateCourseContent): ", topic, error.message);
+    logger.warn(`YouTube fetch failed for topic "${topic}": ${error.message}`);
     return [];
   }
 };
 
-// ── Main controller ─────────────────────────────────────────────────────────
 export const generateCourseContent = async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    // find course
     const course = await Course.findOne({ cid: courseId });
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found (from generateCourseContent)",
+        message: "Course not found",
       });
     }
 
     const chapters = course.courseJson?.chapters || [];
 
-    // ── Process all chapters simultaneously with Promise.all ──
+    // ── Process all chapters simultaneously ──
     const promises = chapters.map(async (chapter) => {
-      // ── Call Gemini for this chapter ──
-      const contents = [
-        {
-          role: "user",
-          parts: [{ text: PROMPT + JSON.stringify(chapter) }],
-        },
-      ];
+      // ── Call Groq ──
+      const rawResp = await generateWithGroq(PROMPT + JSON.stringify(chapter));
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
-        config: {
-          thinkingConfig: { thinkingBudget: 0 },
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "text/plain",
-        },
-        contents,
-      });
-
-      const rawResp =
-        response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const cleanedResp = rawResp.replace(/```json\s*|\s*```/g, "").trim();
+      // ── Clean + repair + parse ──
+      const cleaned = rawResp.replace(/```json\s*|\s*```/g, "").trim();
 
       let JSONResp;
       try {
-        // jsonrepair fixes broken/incomplete JSON from AI
-        const repairedJSON = jsonrepair(cleanedResp);
-        const tempObject = JSON.parse(repairedJSON);
+        const repaired = jsonrepair(cleaned);
+        const tempObject = JSON.parse(repaired);
 
-        // remap inconsistent AI keys to our schema
+        // normalize inconsistent AI keys to our schema
         JSONResp = {
-          chapterName: tempObject.chapterName,
+          chapterName: tempObject.chapterName || chapter.chapterName,
           content: (tempObject.content || tempObject.topics || []).map(
             (item) => ({
-              topic: item.topic || item.title,
-              htmlContent: item.htmlContent || item.content || item.text,
-            })
+              topic: item.topic || item.title || "Untitled Topic",
+              htmlContent: item.htmlContent || item.content || item.text || "",
+            }),
           ),
         };
 
-        console.log("✅ Parsed chapter:", chapter.chapterName);
+        logger.info(` Chapter generated: ${chapter.chapterName}`);
       } catch (parseError) {
-        console.error("❌ Parse error for chapter(generateCourseContent):", chapter.chapterName);
-        console.error("Error:", parseError.message);
+        logger.error(
+          ` Parse error for chapter "${chapter.chapterName}": ${parseError.message}`,
+        );
 
-        // return empty content for this chapter — don't fail entire course
+        // return empty content — don't fail entire course
         JSONResp = {
           chapterName: chapter.chapterName,
           content: [],
         };
       }
 
-      // ── Fetch YouTube videos for this chapter ──
+      // ── Fetch YouTube videos ──
       const youtubeVideo = await getYoutubeVideos(chapter.chapterName);
 
       return {
@@ -138,14 +123,17 @@ export const generateCourseContent = async (req, res) => {
       };
     });
 
-    // wait for all chapters to finish simultaneously
     const courseContent = await Promise.all(promises);
 
     // ── Save to DB ──
     course.courseContent = courseContent;
     course.status = "READY";
+    course.generationMode = "all_at_once";
+    course.chaptersBuilt = chapters.length;
     course.markModified("courseContent");
     await course.save();
+
+    logger.info(`Course content generated — courseId:${courseId}`);
 
     res.status(200).json({
       success: true,
@@ -153,7 +141,7 @@ export const generateCourseContent = async (req, res) => {
       courseContent,
     });
   } catch (error) {
-    console.error("generateCourseContent error(from generateCourseContent):", error.message);
+    logger.error(`generateCourseContent error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: "Failed to generate course content",

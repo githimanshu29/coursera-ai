@@ -1,5 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { ChatGroq } from "@langchain/groq";
 import {
   RunnableSequence,
   RunnablePassthrough,
@@ -8,12 +9,20 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { jsonrepair } from "jsonrepair";
 import logger from "../logger.js";
 
+// const getLLM = () =>
+//   new ChatGoogleGenerativeAI({
+//     apiKey: process.env.GEMINI_API_KEY,
+//     model: "gemini-2.5-flash-lite",
+//     temperature: 0.7,
+//     maxOutputTokens: 8192,
+//   });
+
 const getLLM = () =>
-  new ChatGoogleGenerativeAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    model: "gemini-2.5-flash-lite",
+  new ChatGroq({
+    apiKey: process.env.GROQ_API_KEY,
+    model: "llama-3.3-70b-versatile", // best free model
     temperature: 0.7,
-    maxOutputTokens: 8192,
+    maxTokens: 8192,
   });
 
 // ── Prompt template ───────────────────────────────────────────
