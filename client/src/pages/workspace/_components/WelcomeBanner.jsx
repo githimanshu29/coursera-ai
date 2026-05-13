@@ -365,7 +365,9 @@ const WelcomeBanner = () => {
           <span className="notif-text" style={{ color: "#e0e7ff" }}>
             To attemp quizes click on{" "}
             <span style={{ color: "#818cf8", fontWeight: "600" }}>quiz</span> —
-            button which is at last topic of the chapter in sidebar.
+            button which is at last topic of the chapter in sidebar. Use {""}{" "}
+            <span style={{ color: "#818cf8", fontWeight: "600" }}>GROQ</span>{" "}
+            for quiz generation.
           </span>
         </div>
       </div>
