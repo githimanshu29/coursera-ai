@@ -123,7 +123,7 @@ export const login = async (req, res) => {
     await user.save();
 
     //set refreshToken into cookie
-    res.cookie("refreshToken", newRefreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: process.env.NODE_ENV === "production", // HTTPS only in prod
@@ -186,7 +186,7 @@ export const refreshToken = async (req, res) => {
     user.refreshToken = newRefreshToken;
     await user.save();
 
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: process.env.NODE_ENV === "production", // HTTPS only in prod

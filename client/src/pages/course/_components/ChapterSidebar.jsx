@@ -60,7 +60,7 @@ const ChapterSidebar = ({
       <div
         style={{
           width: "300px",
-          minHeight: "100vh",
+          height: "100vh",
           background: isMobile ? "#0a0f1e" : "rgba(255,255,255,0.02)",
           borderRight: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
@@ -70,6 +70,8 @@ const ChapterSidebar = ({
           top: 0,
           fontFamily: "'Inter', sans-serif",
           overflowY: "auto",
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
           zIndex: 50,
           transition: isMobile ? "left 0.3s ease" : "none",
         }}
