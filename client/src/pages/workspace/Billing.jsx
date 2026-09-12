@@ -158,7 +158,7 @@ const Billing = () => {
               <span style={{ color: "#10b981" }}>✓</span> Unlimited course generations
             </li>
             <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ color: "#10b981" }}>✓</span> Access to Gemini 1.5 Pro
+              <span style={{ color: "#10b981" }}>✓</span> Access to premium AI models
             </li>
             <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ color: "#10b981" }}>✓</span> Export to PDF & Markdown
