@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,18 +13,14 @@ const StepBuildCourse = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const MODEL_OPTIONS = {
-    groq: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"],
-    gemini: ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
-  };
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [logs, setLogs] = useState([]);
   const [embeddingProgress, setEmbeddingProgress] = useState(null);
   const [userInstruction, setUserInstruction] = useState("");
   const [eventSource, setEventSource] = useState(null);
-  const [modelProvider, setModelProvider] = useState("groq");
-  const [modelName, setModelName] = useState(MODEL_OPTIONS.groq[1]);
+  const modelProvider = "gemini";
+  const modelName = localStorage.getItem("customGeminiModel") || "gemini-2.5-flash-lite";
   const generationCompletedRef = useRef(false);
   const [buildNotice, setBuildNotice] = useState("");
 
@@ -38,8 +34,8 @@ const StepBuildCourse = () => {
       const res = await getCourseByIdApi(courseId);
       return res.data.course;
     },
-    staleTime: 0, // ✅ always fetch fresh — no stale cache
-    refetchOnMount: true, // ✅ refetch every time page is visited
+    staleTime: 0, // âœ… always fetch fresh â€” no stale cache
+    refetchOnMount: true, // âœ… refetch every time page is visited
   });
 
   // cleanup SSE on unmount
@@ -49,7 +45,7 @@ const StepBuildCourse = () => {
 
   const totalChapters = course?.courseJson?.chapters?.length || 0;
 
-  // ✅ source of truth is always course.chaptersBuilt from DB
+  // âœ… source of truth is always course.chaptersBuilt from DB
   // during active generation show +1 for optimistic UI
   const chaptersBuilt = isGenerating
     ? course?.chaptersBuilt || 0
@@ -64,11 +60,6 @@ const StepBuildCourse = () => {
     setLogs((prev) => [...prev, { type, message }]);
   };
 
-  const handleProviderChange = (value) => {
-    setModelProvider(value);
-    const nextDefault = MODEL_OPTIONS[value]?.[0] || "";
-    setModelName(nextDefault);
-  };
 
   const handleGenerateNextChapter = async () => {
     if (isGenerating || isComplete) return;
@@ -86,7 +77,7 @@ const StepBuildCourse = () => {
       `Starting chapter ${currentIndex + 1}/${totalChapters}: "${chapterName}"`,
     );
     if (userInstruction) addLog("status", `Instruction: "${userInstruction}"`);
-    addLog("status", `Model: ${modelProvider.toUpperCase()} — ${modelName}`);
+    addLog("status", `Model: ${modelProvider.toUpperCase()} â€” ${modelName}`);
 
     const es = await createChapterRAGStream(
       courseId,
@@ -126,7 +117,7 @@ const StepBuildCourse = () => {
         `Topics: ${data.topicsGenerated} | Chunks: ${data.chunksStored} | Videos: ${data.videosFound}`,
       );
 
-      // ✅ invalidate all caches + force fresh refetch
+      // âœ… invalidate all caches + force fresh refetch
       await queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       await queryClient.invalidateQueries({ queryKey: ["userCourses"] });
       await queryClient.invalidateQueries({ queryKey: ["enrolledCourses"] });
@@ -165,7 +156,7 @@ const StepBuildCourse = () => {
         addLog("error", "Connection error occurred");
       }
       setBuildNotice(
-        "API credits might be exhausted — explore preview courses.",
+        "API credits might be exhausted â€” explore preview courses.",
       );
       es.close();
     });
@@ -250,7 +241,7 @@ const StepBuildCourse = () => {
           onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "#6b7280")}
         >
-          ← Back to Dashboard
+          â† Back to Dashboard
         </button>
         <h1
           style={{
@@ -371,7 +362,7 @@ const StepBuildCourse = () => {
                     flexShrink: 0,
                   }}
                 >
-                  {isBuilt ? "✓" : i + 1}
+                  {isBuilt ? "âœ“" : i + 1}
                 </div>
                 <span
                   style={{
@@ -441,7 +432,7 @@ const StepBuildCourse = () => {
               whiteSpace: "nowrap",
             }}
           >
-            📖 Study So Far
+            ðŸ“– Study So Far
           </button>
         </div>
       )}
@@ -459,7 +450,7 @@ const StepBuildCourse = () => {
             animation: "slideIn 0.5s ease",
           }}
         >
-          <div style={{ fontSize: "40px", marginBottom: "12px" }}>🎉</div>
+          <div style={{ fontSize: "40px", marginBottom: "12px" }}>ðŸŽ‰</div>
           <h3
             style={{
               color: "#4ade80",
@@ -496,7 +487,7 @@ const StepBuildCourse = () => {
                 cursor: "pointer",
               }}
             >
-              📖 Start Learning
+              ðŸ“– Start Learning
             </button>
             <button
               onClick={() => navigate("/workspace")}
@@ -511,76 +502,13 @@ const StepBuildCourse = () => {
                 cursor: "pointer",
               }}
             >
-              → Dashboard
+              â†’ Dashboard
             </button>
           </div>
         </div>
       ) : (
         <>
-          <div style={{ marginBottom: "12px" }}>
-            <label
-              style={{
-                color: "#9ca3af",
-                fontSize: "12px",
-                fontWeight: "500",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              Model provider
-            </label>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
-              }}
-            >
-              <select
-                value={modelProvider}
-                onChange={(e) => handleProviderChange(e.target.value)}
-                disabled={isGenerating}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  background: "rgba(31,41,55,0.8)",
-                  border: "1px solid rgba(75,85,99,0.5)",
-                  color: "white",
-                  fontSize: "13px",
-                  outline: "none",
-                  animation: "attentionGlow 2.4s ease-in-out infinite",
-                  opacity: isGenerating ? 0.5 : 1,
-                }}
-              >
-                <option value="groq">Groq</option>
-                <option value="gemini">Gemini</option>
-              </select>
-              <select
-                value={modelName}
-                onChange={(e) => setModelName(e.target.value)}
-                disabled={isGenerating}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  background: "rgba(31,41,55,0.8)",
-                  border: "1px solid rgba(75,85,99,0.5)",
-                  color: "white",
-                  fontSize: "13px",
-                  outline: "none",
-                  animation: "attentionGlow 2.4s ease-in-out infinite",
-                  opacity: isGenerating ? 0.5 : 1,
-                }}
-              >
-                {MODEL_OPTIONS[modelProvider].map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          
 
           <div style={{ marginBottom: "12px" }}>
             <label
@@ -668,12 +596,12 @@ const StepBuildCourse = () => {
               </>
             ) : (
               <>
-                ⚡ Generate Chapter {displayChaptersBuilt + 1}/{totalChapters}
+                âš¡ Generate Chapter {displayChaptersBuilt + 1}/{totalChapters}
                 {currentChapterName && (
                   <span
                     style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px" }}
                   >
-                    — "{currentChapterName}"
+                    â€” "{currentChapterName}"
                   </span>
                 )}
               </>
@@ -696,3 +624,4 @@ const StepBuildCourse = () => {
 };
 
 export default StepBuildCourse;
+
