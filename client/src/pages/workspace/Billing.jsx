@@ -1,18 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { getMeApi } from "../../lib/api.js";
+import { updateCredits } from "../../store/slices/authSlice.js";
 
 const Billing = () => {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const [customKey, setCustomKey] = useState("");
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    // ── Load saved custom key ──
     const savedKey = localStorage.getItem("customGeminiKey");
     if (savedKey) {
       setCustomKey(savedKey);
       setIsSaved(true);
     }
-  }, []);
+
+    // ── Fetch latest user credits from backend ──
+    const fetchUserStats = async () => {
+      try {
+        const res = await getMeApi();
+        if (res.data.success) {
+          dispatch(updateCredits({
+            creditsUsed: res.data.user.creditsUsed,
+            maxCredits: res.data.user.maxCredits,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch user stats", err);
+      }
+    };
+    fetchUserStats();
+  }, [dispatch]);
 
   const handleSaveKey = () => {
     if (customKey.trim()) {
@@ -51,10 +71,17 @@ const Billing = () => {
           <div style={{ marginBottom: "20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
               <span style={{ color: "#d1d5db", fontSize: "13px" }}>API Credits Used</span>
-              <span style={{ color: "white", fontSize: "13px", fontWeight: "600" }}>85% (17/20)</span>
+              <span style={{ color: "white", fontSize: "13px", fontWeight: "600" }}>
+                {Math.round(((user?.creditsUsed || 0) / (user?.maxCredits || 20)) * 100)}% ({user?.creditsUsed || 0}/{user?.maxCredits || 20})
+              </span>
             </div>
             <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden" }}>
-              <div style={{ width: "85%", height: "100%", background: "linear-gradient(90deg, #f59e0b, #ef4444)" }}></div>
+              <div style={{ 
+                width: `${Math.round(((user?.creditsUsed || 0) / (user?.maxCredits || 20)) * 100)}%`, 
+                height: "100%", 
+                background: "linear-gradient(90deg, #f59e0b, #ef4444)",
+                transition: "width 0.5s ease-out" 
+              }}></div>
             </div>
           </div>
 

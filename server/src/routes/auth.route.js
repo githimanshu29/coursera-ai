@@ -4,6 +4,7 @@ import {
   login,
   refreshToken,
   logout,
+  getMe,
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
@@ -14,5 +15,6 @@ router.post("/register",authLimiter, register);
 router.post("/login", authLimiter, login);
 router.post("/refresh-token", refreshToken);
 router.post("/logout", protect, logout);
+router.get("/me", protect, getMe);
 
 export default router;

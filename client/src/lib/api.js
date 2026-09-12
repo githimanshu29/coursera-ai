@@ -5,6 +5,7 @@ import axiosInstance from "./axios";
 export const loginApi = (data) => axiosInstance.post("/auth/login", data);
 export const registerApi = (data) => axiosInstance.post("/auth/register", data);
 export const logoutApi = () => axiosInstance.post("/auth/logout");
+export const getMeApi = () => axiosInstance.get("/auth/me");
 
 //courses related endpoints
 export const getUserCoursesApi = () =>
