@@ -78,7 +78,7 @@ export const generateCourseContent = async (req, res) => {
 
     // ── Process all chapters simultaneously with Promise.all ──
     const user = await require("../../models/User.js").default.findById(req.user._id);
-    const { client: ai, error: aiError } = getAIClient(req, user);
+    const { client: ai, model: aiModel, error: aiError } = getAIClient(req, user);
     if (aiError) {
       return res.status(403).json({ success: false, message: aiError });
     }
@@ -92,7 +92,7 @@ export const generateCourseContent = async (req, res) => {
       ];
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: aiModel,
         config: {
           thinkingConfig: { thinkingBudget: 0 },
           tools: [{ googleSearch: {} }],

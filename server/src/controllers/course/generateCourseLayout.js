@@ -23,7 +23,7 @@ export const generateCourseLayout = async (req, res) => {
     }
 
     // Pro users get server key; free tier must provide BYOK via x-gemini-key header
-    const { client: ai, error: aiError } = getAIClient(req, user);
+    const { client: ai, model: aiModel, error: aiError } = getAIClient(req, user);
     if (aiError) {
       return res.status(403).json({ success: false, message: aiError });
     }
@@ -50,7 +50,7 @@ export const generateCourseLayout = async (req, res) => {
     ];
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: aiModel,
       config: {
         thinkingConfig: { thinkingBudget: 0 },
         tools: [{ googleSearch: {} }],
