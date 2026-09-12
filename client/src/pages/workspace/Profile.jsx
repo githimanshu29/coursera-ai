@@ -68,6 +68,22 @@ const Profile = () => {
             />
           </div>
           <div>
+            <label style={{ display: "block", color: "#d1d5db", fontSize: "13px", marginBottom: "8px" }}>Account Tier</label>
+            <div style={{
+              width: "100%", padding: "12px 16px", borderRadius: "10px",
+              background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)",
+              color: user?.maxCredits > 20 ? "#4ade80" : "#a78bfa", fontSize: "14px", fontWeight: "600",
+              display: "flex", alignItems: "center", justifyContent: "space-between"
+            }}>
+              <span>{user?.maxCredits > 20 ? "Pro Plan" : "Free Tier"}</span>
+              {user?.maxCredits <= 20 && (
+                <span style={{ fontSize: "12px", fontWeight: "500", color: "#6b7280" }}>
+                  Upgrade for more credits
+                </span>
+              )}
+            </div>
+          </div>
+          <div>
             <label style={{ display: "block", color: "#d1d5db", fontSize: "13px", marginBottom: "8px" }}>Email Address</label>
             <input 
               type="email" 
@@ -104,3 +120,4 @@ const Profile = () => {
 };
 
 export default Profile;
+
