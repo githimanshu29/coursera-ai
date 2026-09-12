@@ -61,7 +61,7 @@ export const generateCourseLayout = async (req, res) => {
     const response = await ai.models.generateContent({
       model: aiModel,
       config: {
-        tools: [{ googleSearch: {} }],
+        
         responseMimeType: "text/plain",
       },
       contents,
