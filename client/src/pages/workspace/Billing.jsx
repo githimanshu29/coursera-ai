@@ -1,8 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 const Billing = () => {
   const { user } = useSelector((state) => state.auth);
+  const [customKey, setCustomKey] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem("customGeminiKey");
+    if (savedKey) {
+      setCustomKey(savedKey);
+      setIsSaved(true);
+    }
+  }, []);
+
+  const handleSaveKey = () => {
+    if (customKey.trim()) {
+      localStorage.setItem("customGeminiKey", customKey.trim());
+      setIsSaved(true);
+      alert("Custom Gemini API Key saved locally!");
+    } else {
+      localStorage.removeItem("customGeminiKey");
+      setIsSaved(false);
+      alert("Custom Gemini API Key removed!");
+    }
+  };
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", paddingBottom: "40px", maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
@@ -19,7 +41,9 @@ const Billing = () => {
           background: "rgba(255,255,255,0.02)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: "16px",
-          padding: "24px"
+          padding: "24px",
+          display: "flex",
+          flexDirection: "column"
         }}>
           <h3 style={{ color: "white", fontSize: "18px", fontWeight: "600" }}>Current Plan: Free</h3>
           <p style={{ color: "#9ca3af", fontSize: "13px", margin: "8px 0 20px" }}>You are currently on the Free tier. Upgrade for more credits and premium AI models.</p>
@@ -38,8 +62,47 @@ const Billing = () => {
             width: "100%", padding: "10px", borderRadius: "10px",
             background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
             border: "none", color: "white", fontWeight: "600", cursor: "pointer",
-            boxShadow: "0 4px 15px rgba(124,58,237,0.3)"
+            boxShadow: "0 4px 15px rgba(124,58,237,0.3)",
+            marginBottom: "24px"
           }}>Upgrade to Pro</button>
+
+          {/* BYOK Section */}
+          <div style={{
+            marginTop: "auto",
+            paddingTop: "20px",
+            borderTop: "1px solid rgba(255,255,255,0.08)"
+          }}>
+            <h4 style={{ color: "white", fontSize: "14px", fontWeight: "600", marginBottom: "8px" }}>Bring Your Own Key (BYOK)</h4>
+            <p style={{ color: "#9ca3af", fontSize: "12px", marginBottom: "12px" }}>Bypass server limits by providing your own Google Gemini API key. This is stored locally on your device.</p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="password"
+                placeholder="AIzaSy..."
+                value={customKey}
+                onChange={(e) => {
+                  setCustomKey(e.target.value);
+                  setIsSaved(false);
+                }}
+                style={{
+                  flex: 1, padding: "10px", borderRadius: "8px",
+                  background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "white", fontSize: "13px", outline: "none"
+                }}
+              />
+              <button
+                onClick={handleSaveKey}
+                style={{
+                  padding: "0 16px", borderRadius: "8px",
+                  background: isSaved ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.05)",
+                  border: isSaved ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(255,255,255,0.1)",
+                  color: isSaved ? "#10b981" : "white",
+                  fontSize: "13px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s"
+                }}
+              >
+                {isSaved ? "Saved" : "Save"}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Pro Plan Advertisement */}

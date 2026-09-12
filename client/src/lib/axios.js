@@ -1,16 +1,22 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5005/api",
-  withCredentials: true,
+  baseURL: "http://localhost:5005/api",
+  withCredentials: true, // sends cookies (refreshToken) automatically
 });
 
-// attach accessToken to every request
+// attach accessToken and custom Gemini key to every request
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  const customGeminiKey = localStorage.getItem("customGeminiKey");
+  if (customGeminiKey) {
+    config.headers["x-gemini-key"] = customGeminiKey;
+  }
+  
   return config;
 });
 
@@ -25,9 +31,9 @@ axiosInstance.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:5005/api/auth/refresh-token",
+          "http://localhost:6000/api/auth/refresh-token",
           {},
-          { withCredentials: true },
+          { withCredentials: true }
         );
 
         const newAccessToken = res.data.accessToken;
@@ -35,7 +41,7 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         return axiosInstance(originalRequest); // retry original request
-        // eslint-disable-next-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
         localStorage.removeItem("accessToken");
         window.location.href = "/login"; // redirect to login
@@ -43,7 +49,7 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default axiosInstance;
