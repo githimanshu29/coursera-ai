@@ -532,7 +532,7 @@ const EditCourse = () => {
                 disabled={isGenerating}
               >
                 {GEMINI_MODELS.map((model) => (
-                  <option key={model} value={model}>{model}</option>
+                  <option key={model} value={model} style={{ background: "#1f2937", color: "white" }}>{model}</option>
                 ))}
               </select>
           </div>

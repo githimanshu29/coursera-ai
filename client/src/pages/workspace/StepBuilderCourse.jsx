@@ -594,7 +594,8 @@ const StepBuildCourse = () => {
                 fontSize: "13px",
                 outline: "none",
                 opacity: isGenerating ? 0.5 : 1,
-              }}
+                  colorScheme: "dark",
+                }}
             >
               {GEMINI_MODELS.map((model) => (
                 <option key={model} value={model}>
