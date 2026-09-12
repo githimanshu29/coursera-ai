@@ -140,7 +140,7 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
             </svg>
           </div>
           <span style={{ color: "white", fontWeight: "700", fontSize: "17px", letterSpacing: "-0.3px" }}>
-            Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+            coursera<span style={{ color: "#a78bfa" }}>.ai</span>
           </span>
         </div>
 
