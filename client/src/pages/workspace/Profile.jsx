@@ -1,14 +1,16 @@
 import React, { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { setCredentials } from "../../store/slices/authSlice.js";
 import { updateProfileApi } from "../../lib/api.js";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, accessToken } = useSelector((state) => state.auth);
   const [name, setName] = useState(user?.name || "");
   const [isSaving, setIsSaving] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarBase64, setAvatarBase64] = useState(null);
   const [saveMsg, setSaveMsg] = useState("");
   const [saveErr, setSaveErr] = useState("");
@@ -16,10 +18,16 @@ const Profile = () => {
 
   const isPro = user?.maxCredits > 20;
 
+  // Gemini API key (for free tier)
+  const [geminiKey, setGeminiKey] = useState(
+    localStorage.getItem("customGeminiKey") || ""
+  );
+  const [showKey, setShowKey] = useState(false);
+  const [keySaved, setKeySaved] = useState(false);
+
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Warn if file is too large (>1MB after base64 encode)
     if (file.size > 750000) {
       setSaveErr("Image too large. Please pick an image under 750KB.");
       return;
@@ -31,6 +39,12 @@ const Profile = () => {
       setAvatarBase64(ev.target.result);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSaveKey = () => {
+    localStorage.setItem("customGeminiKey", geminiKey.trim());
+    setKeySaved(true);
+    setTimeout(() => setKeySaved(false), 3000);
   };
 
   const handleSave = async (e) => {
@@ -50,7 +64,7 @@ const Profile = () => {
             accessToken,
           })
         );
-        setAvatarBase64(null); // clear pending upload
+        setAvatarBase64(null);
         setSaveMsg("Profile saved successfully!");
         setTimeout(() => setSaveMsg(""), 3000);
       }
@@ -83,6 +97,7 @@ const Profile = () => {
         </p>
       </div>
 
+      {/* Main profile card */}
       <div
         style={{
           background: "rgba(255,255,255,0.02)",
@@ -92,23 +107,14 @@ const Profile = () => {
         }}
       >
         {/* Avatar row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "20px",
-            marginBottom: "32px",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "32px" }}>
           <div style={{ position: "relative" }}>
             {showAvatar ? (
               <img
                 src={avatarPreview}
                 alt="avatar"
                 style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
+                  width: "80px", height: "80px", borderRadius: "50%",
                   objectFit: "cover",
                   boxShadow: "0 4px 20px rgba(124,58,237,0.4)",
                   border: avatarBase64 ? "2px solid #7c3aed" : "none",
@@ -117,184 +123,87 @@ const Profile = () => {
             ) : (
               <div
                 style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
+                  width: "80px", height: "80px", borderRadius: "50%",
                   background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "32px",
-                  color: "white",
-                  fontWeight: "700",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "32px", color: "white", fontWeight: "700",
                   boxShadow: "0 4px 20px rgba(124,58,237,0.4)",
                 }}
               >
                 {avatarLetter}
               </div>
             )}
-            {/* Purple dot indicator when unsaved avatar pending */}
             {avatarBase64 && (
               <div
                 style={{
-                  position: "absolute",
-                  bottom: "2px",
-                  right: "2px",
-                  width: "14px",
-                  height: "14px",
-                  borderRadius: "50%",
-                  background: "#7c3aed",
-                  border: "2px solid #0a0f1e",
+                  position: "absolute", bottom: "2px", right: "2px",
+                  width: "14px", height: "14px", borderRadius: "50%",
+                  background: "#7c3aed", border: "2px solid #0a0f1e",
                 }}
-                title="Unsaved avatar - click Save Changes"
+                title="Unsaved avatar — click Save Changes"
               />
             )}
           </div>
-
           <div>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
+                padding: "8px 16px", borderRadius: "8px",
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
-                color: "white",
-                fontSize: "13px",
-                cursor: "pointer",
-                transition: "background 0.2s",
+                color: "white", fontSize: "13px", cursor: "pointer",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "rgba(255,255,255,0.05)")
-              }
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
             >
               Change Avatar
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleAvatarChange}
-            />
-            <p
-              style={{
-                color: "#6b7280",
-                fontSize: "12px",
-                marginTop: "6px",
-              }}
-            >
-              JPG, PNG or GIF · max 750KB
-            </p>
-            {avatarBase64 && (
-              <p style={{ color: "#a78bfa", fontSize: "12px", marginTop: "4px" }}>
-                ⬆ Click Save Changes to apply
-              </p>
-            )}
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+            <p style={{ color: "#6b7280", fontSize: "12px", marginTop: "6px" }}>JPG, PNG or GIF · max 750KB</p>
+            {avatarBase64 && <p style={{ color: "#a78bfa", fontSize: "12px", marginTop: "4px" }}>⬆ Click Save Changes to apply</p>}
           </div>
         </div>
 
-        <form
-          onSubmit={handleSave}
-          style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-        >
+        <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Full Name */}
           <div>
-            <label
-              style={{
-                display: "block",
-                color: "#d1d5db",
-                fontSize: "13px",
-                marginBottom: "8px",
-              }}
-            >
-              Full Name
-            </label>
+            <label style={{ display: "block", color: "#d1d5db", fontSize: "13px", marginBottom: "8px" }}>Full Name</label>
             <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              type="text" value={name} onChange={(e) => setName(e.target.value)}
               style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: "10px",
-                background: "rgba(0,0,0,0.2)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "white",
-                fontSize: "14px",
-                outline: "none",
-                boxSizing: "border-box",
+                width: "100%", padding: "12px 16px", borderRadius: "10px",
+                background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "white", fontSize: "14px", outline: "none", boxSizing: "border-box",
               }}
             />
           </div>
 
-          {/* Email Address */}
+          {/* Email */}
           <div>
-            <label
-              style={{
-                display: "block",
-                color: "#d1d5db",
-                fontSize: "13px",
-                marginBottom: "8px",
-              }}
-            >
-              Email Address
-            </label>
+            <label style={{ display: "block", color: "#d1d5db", fontSize: "13px", marginBottom: "8px" }}>Email Address</label>
             <input
-              type="email"
-              value={user?.email || ""}
-              disabled
+              type="email" value={user?.email || ""} disabled
               style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.05)",
-                color: "#9ca3af",
-                fontSize: "14px",
-                outline: "none",
-                cursor: "not-allowed",
-                boxSizing: "border-box",
+                width: "100%", padding: "12px 16px", borderRadius: "10px",
+                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)",
+                color: "#9ca3af", fontSize: "14px", outline: "none", cursor: "not-allowed", boxSizing: "border-box",
               }}
             />
-            <p
-              style={{ color: "#6b7280", fontSize: "12px", marginTop: "6px" }}
-            >
-              Email cannot be changed.
-            </p>
+            <p style={{ color: "#6b7280", fontSize: "12px", marginTop: "6px" }}>Email cannot be changed.</p>
           </div>
 
           {/* Account Tier */}
           <div>
-            <label
-              style={{
-                display: "block",
-                color: "#d1d5db",
-                fontSize: "13px",
-                marginBottom: "8px",
-              }}
-            >
-              Account Tier
-            </label>
+            <label style={{ display: "block", color: "#d1d5db", fontSize: "13px", marginBottom: "8px" }}>Account Tier</label>
             <div
               style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: "10px",
+                width: "100%", padding: "12px 16px", borderRadius: "10px",
                 background: "rgba(255,255,255,0.02)",
-                border: isPro
-                  ? "1px solid rgba(74,222,128,0.25)"
-                  : "1px solid rgba(167,139,250,0.25)",
+                border: isPro ? "1px solid rgba(74,222,128,0.25)" : "1px solid rgba(167,139,250,0.25)",
                 color: isPro ? "#4ade80" : "#a78bfa",
-                fontSize: "14px",
-                fontWeight: "600",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                fontSize: "14px", fontWeight: "600",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
                 boxSizing: "border-box",
               }}
             >
@@ -303,56 +212,120 @@ const Profile = () => {
                 {isPro ? "Pro Plan" : "Free Tier"}
               </span>
               {!isPro && (
-                <span style={{ fontSize: "12px", fontWeight: "500", color: "#6b7280" }}>
-                  {user?.creditsUsed ?? 0} / {user?.maxCredits ?? 20} credits used
-                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/workspace/billing")}
+                  style={{
+                    fontSize: "11px", fontWeight: "600", color: "#7c3aed",
+                    background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.3)",
+                    borderRadius: "6px", padding: "3px 10px", cursor: "pointer",
+                  }}
+                >
+                  Upgrade →
+                </button>
               )}
             </div>
           </div>
 
-          {/* Error */}
-          {saveErr && (
-            <p style={{ color: "#f87171", fontSize: "13px", marginTop: "-8px" }}>
-              ✗ {saveErr}
-            </p>
-          )}
+          {/* Error / Success */}
+          {saveErr && <p style={{ color: "#f87171", fontSize: "13px" }}>✗ {saveErr}</p>}
 
           {/* Save button */}
           <button
-            type="submit"
-            disabled={isSaving}
+            type="submit" disabled={isSaving}
             style={{
-              padding: "12px",
-              borderRadius: "10px",
-              marginTop: "10px",
+              padding: "12px", borderRadius: "10px", marginTop: "4px",
               background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              border: "none",
-              color: "white",
-              fontSize: "14px",
-              fontWeight: "600",
+              border: "none", color: "white", fontSize: "14px", fontWeight: "600",
               cursor: isSaving ? "not-allowed" : "pointer",
               opacity: isSaving ? 0.7 : 1,
               boxShadow: "0 4px 15px rgba(124,58,237,0.3)",
-              transition: "opacity 0.2s",
             }}
           >
             {isSaving ? "Saving..." : "Save Changes"}
           </button>
-
-          {saveMsg && (
-            <p
-              style={{
-                color: "#4ade80",
-                fontSize: "13px",
-                textAlign: "center",
-                marginTop: "-8px",
-              }}
-            >
-              ✓ {saveMsg}
-            </p>
-          )}
+          {saveMsg && <p style={{ color: "#4ade80", fontSize: "13px", textAlign: "center" }}>✓ {saveMsg}</p>}
         </form>
       </div>
+
+      {/* Gemini API Key card — only for free tier */}
+      {!isPro && (
+        <div
+          style={{
+            marginTop: "24px",
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(167,139,250,0.2)",
+            borderRadius: "16px",
+            padding: "28px",
+          }}
+        >
+          <div style={{ marginBottom: "16px" }}>
+            <h3 style={{ color: "white", fontSize: "16px", fontWeight: "600", marginBottom: "4px" }}>
+              🔑 Gemini API Key
+            </h3>
+            <p style={{ color: "#9ca3af", fontSize: "13px" }}>
+              Required for course generation on the free tier. Your key is stored only in your browser.
+            </p>
+          </div>
+
+          <div style={{ position: "relative", marginBottom: "10px" }}>
+            <input
+              type={showKey ? "text" : "password"}
+              value={geminiKey}
+              onChange={(e) => setGeminiKey(e.target.value)}
+              placeholder="AIza..."
+              style={{
+                width: "100%", padding: "12px 44px 12px 16px", borderRadius: "10px",
+                background: "rgba(0,0,0,0.2)", border: "1px solid rgba(167,139,250,0.3)",
+                color: "white", fontSize: "14px", outline: "none", boxSizing: "border-box",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "rgba(124,58,237,0.7)")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(167,139,250,0.3)")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              style={{
+                position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer", fontSize: "16px", padding: "2px",
+              }}
+            >
+              {showKey ? "🙈" : "👁️"}
+            </button>
+          </div>
+
+          <p style={{ color: "#6b7280", fontSize: "12px", marginBottom: "14px" }}>
+            Get a free key at{" "}
+            <a
+              href="https://aistudio.google.com/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#a78bfa", textDecoration: "none" }}
+            >
+              aistudio.google.com/apikey
+            </a>
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSaveKey}
+            style={{
+              padding: "10px 20px", borderRadius: "10px",
+              background: keySaved
+                ? "rgba(74,222,128,0.15)"
+                : "rgba(124,58,237,0.15)",
+              border: keySaved
+                ? "1px solid rgba(74,222,128,0.3)"
+                : "1px solid rgba(124,58,237,0.3)",
+              color: keySaved ? "#4ade80" : "#a78bfa",
+              fontSize: "13px", fontWeight: "600", cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {keySaved ? "✓ Key Saved!" : "Save API Key"}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
