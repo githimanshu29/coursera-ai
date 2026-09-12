@@ -26,14 +26,10 @@ const App = () => {
 
       <Route element={<WorkspaceLayout />}>
         <Route path="/workspace" element={<Dashboard />} />
-        <Route path="/workspace/my-learning" element={<Dashboard />} />
         <Route
           path="/workspace/step-build/:courseId"
           element={<StepBuildCourse />}
         />
-
-        <Route path="/workspace/explore" element={<Dashboard />} />
-        <Route path="/workspace/ai-tools" element={<Dashboard />} />
         <Route path="/workspace/billing" element={<Billing />} />
         <Route path="/workspace/profile" element={<Profile />} />
         <Route
