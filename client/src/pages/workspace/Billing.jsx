@@ -21,9 +21,30 @@ const Billing = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [selectedModel, setSelectedModel] = useState(
-    localStorage.getItem("customGeminiModel") || "gemini-2.5-flash-lite"
+    localStorage.getItem("customGeminiModel") || "gemini-3.7-flash"
   );
   const [saveMsg, setSaveMsg] = useState("");
+  const [usageToday, setUsageToday] = useState(0);
+
+  const updateUsageDisplay = () => {
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const usage = JSON.parse(localStorage.getItem("geminiUsage") || "{}");
+      if (usage[today] && usage[today][selectedModel]) {
+        setUsageToday(usage[today][selectedModel]);
+      } else {
+        setUsageToday(0);
+      }
+    } catch (e) {
+      setUsageToday(0);
+    }
+  };
+
+  useEffect(() => {
+    updateUsageDisplay();
+    window.addEventListener("geminiUsageUpdated", updateUsageDisplay);
+    return () => window.removeEventListener("geminiUsageUpdated", updateUsageDisplay);
+  }, [selectedModel]);
 
   useEffect(() => {
     // Load saved custom key
