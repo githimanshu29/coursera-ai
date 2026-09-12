@@ -77,13 +77,18 @@ const Dashboard = () => {
     }
   };
 
-  const handleEnroll = async (courseId) => {
+    const handleEnroll = async (courseId) => {
     try {
       await enrollCourseApi(courseId);
       refetchEnrolled();
       refetchCourses();
+      navigate(`/course/${courseId}`);
     } catch (err) {
       console.error("Enroll error:", err);
+      // If already enrolled, just navigate anyway
+      if (err?.response?.status === 400 && err?.response?.data?.message?.includes("already enrolled")) {
+        navigate(`/course/${courseId}`);
+      }
     }
   };
 
