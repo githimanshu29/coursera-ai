@@ -20,13 +20,6 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       localStorage.setItem("accessToken", accessToken);
     },
-    updateCredits: (state, action) => {
-      const { creditsUsed, maxCredits } = action.payload;
-      if (state.user) {
-        if (creditsUsed !== undefined) state.user.creditsUsed = creditsUsed;
-        if (maxCredits !== undefined) state.user.maxCredits = maxCredits;
-      }
-    },
     logout: (state) => {
         //logout:purpose is to clear the state when user logs out
       state.user = null;
@@ -37,7 +30,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, updateCredits, logout } = authSlice.actions;
+export const { setCredentials, logout } = authSlice.actions;
 export default authSlice.reducer;
 
 
