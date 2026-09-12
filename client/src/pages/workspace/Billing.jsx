@@ -4,12 +4,13 @@ import { getMeApi } from "../../lib/api.js";
 import { updateCredits } from "../../store/slices/authSlice.js";
 
 const GEMINI_MODELS = [
-  { label: "Gemini 2.5 Flash", value: "gemini-2.5-flash" },
-  { label: "Gemini 2.5 Flash Lite", value: "gemini-2.5-flash-lite" },
-  { label: "Gemini 1.5 Flash", value: "gemini-1.5-flash" },
-  { label: "Gemini 1.5 Flash 8B", value: "gemini-1.5-flash-8b" },
-  { label: "Gemini 1.5 Pro", value: "gemini-1.5-pro" },
-  { label: "Gemini 1.0 Pro", value: "gemini-1.0-pro" },
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
 ];
 
 const Billing = () => {
@@ -288,35 +289,28 @@ const Billing = () => {
               >
                 Gemini Model
               </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              <select
+                value={selectedModel}
+                onChange={(e) => handleModelChange(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: "8px",
+                  background: "rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "white",
+                  fontSize: "13px",
+                  outline: "none",
+                  cursor: "pointer",
+                  appearance: "auto",
+                }}
+              >
                 {GEMINI_MODELS.map((m) => (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => handleModelChange(m.value)}
-                    style={{
-                      padding: "5px 10px",
-                      borderRadius: "20px",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      background:
-                        selectedModel === m.value
-                          ? "rgba(124,58,237,0.25)"
-                          : "rgba(255,255,255,0.04)",
-                      border:
-                        selectedModel === m.value
-                          ? "1px solid rgba(124,58,237,0.6)"
-                          : "1px solid rgba(255,255,255,0.08)",
-                      color:
-                        selectedModel === m.value ? "#c4b5fd" : "#9ca3af",
-                    }}
-                  >
-                    {m.label}
-                  </button>
+                  <option key={m} value={m} style={{ background: "#111827", color: "white" }}>
+                    {m}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
 
             {/* Save row */}
