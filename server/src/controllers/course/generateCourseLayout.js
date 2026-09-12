@@ -1,5 +1,4 @@
 import Course from "../../models/Course.js";
-import User from "../../models/User.js";
 import { getAIClient } from "../../lib/gemini.js";
 
 const PROMPT = `enerate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
@@ -51,21 +50,6 @@ export const generateCourseLayout = async (req, res) => {
       noOfChapters,
       includeVideo,
     } = req.body;
-
-    // ── Check Credits (if not using BYOK) ──
-    const isUsingBYOK = !!req.headers["x-gemini-key"];
-    const user = await User.findById(req.user._id);
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (!isUsingBYOK && user.creditsUsed >= user.maxCredits) {
-      return res.status(402).json({
-        success: false,
-        message: "You have reached your free generation limit. Please upgrade your plan or provide your own Gemini API key.",
-      });
-    }
 
     // ── Call Gemini ──
     const ai = getAIClient(req);
@@ -136,18 +120,10 @@ export const generateCourseLayout = async (req, res) => {
       createdBy: req.user._id,
     });
 
-    // ── Update Credits ──
-    if (!isUsingBYOK) {
-      user.creditsUsed += 1;
-      await user.save();
-    }
-
     res.status(201).json({
       success: true,
       message: "Course layout generated successfully",
       course,
-      creditsUsed: isUsingBYOK ? undefined : user.creditsUsed,
-      maxCredits: isUsingBYOK ? undefined : user.maxCredits,
     });
   } catch (error) {
     console.error("generateCourseLayout error:", error.message);
