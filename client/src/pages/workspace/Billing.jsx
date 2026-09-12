@@ -118,46 +118,6 @@ const Billing = () => {
             premium AI models.
           </p>
 
-          <div style={{ marginBottom: "20px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "8px",
-              }}
-            >
-              <span style={{ color: "#d1d5db", fontSize: "13px" }}>
-                API Credits Used
-              </span>
-              <span style={{ color: "white", fontSize: "13px", fontWeight: "600" }}>
-                {Math.round(
-                  ((user?.creditsUsed || 0) / (user?.maxCredits || 20)) * 100
-                )}
-                % ({user?.creditsUsed || 0}/{user?.maxCredits || 20})
-              </span>
-            </div>
-            <div
-              style={{
-                width: "100%",
-                height: "8px",
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: "4px",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${Math.round(
-                    ((user?.creditsUsed || 0) / (user?.maxCredits || 20)) * 100
-                  )}%`,
-                  height: "100%",
-                  background: "linear-gradient(90deg, #f59e0b, #ef4444)",
-                  transition: "width 0.5s ease-out",
-                }}
-              />
-            </div>
-          </div>
-
           <button
             style={{
               width: "100%",
