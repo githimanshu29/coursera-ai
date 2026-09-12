@@ -19,8 +19,23 @@ const StepBuildCourse = () => {
   const [embeddingProgress, setEmbeddingProgress] = useState(null);
   const [userInstruction, setUserInstruction] = useState("");
   const [eventSource, setEventSource] = useState(null);
+  const GEMINI_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
+    "gemini-3-flash-preview",
+  ];
+
+  const [modelName, setModelName] = useState(
+    localStorage.getItem("customGeminiModel") || "gemini-2.5-flash-lite"
+  );
+
+  // Keep modelProvider as gemini only
   const modelProvider = "gemini";
-  const modelName = localStorage.getItem("customGeminiModel") || "gemini-2.5-flash-lite";
   const generationCompletedRef = useRef(false);
   const [buildNotice, setBuildNotice] = useState("");
 
@@ -549,6 +564,46 @@ const StepBuildCourse = () => {
               }
             />
           </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                color: "#9ca3af",
+                fontSize: "12px",
+                fontWeight: "500",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Gemini Model
+            </label>
+            <select
+              value={modelName}
+              onChange={(e) => {
+                setModelName(e.target.value);
+                localStorage.setItem("customGeminiModel", e.target.value);
+              }}
+              disabled={isGenerating}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                background: "rgba(31,41,55,0.8)",
+                border: "1px solid rgba(75,85,99,0.5)",
+                color: "white",
+                fontSize: "13px",
+                outline: "none",
+                opacity: isGenerating ? 0.5 : 1,
+              }}
+            >
+              {GEMINI_MODELS.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+          </div>
+
 
           <button
             onClick={handleGenerateNextChapter}
