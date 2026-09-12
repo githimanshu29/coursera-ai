@@ -74,19 +74,17 @@ const Billing = () => {
   }, [dispatch]);
 
   const handleSaveKey = () => {
-    if (customKey.trim()) {
-      localStorage.setItem("customGeminiKey", customKey.trim());
-      localStorage.setItem("customGeminiModel", selectedModel);
-      setIsSaved(true);
-      setSaveMsg("Saved!");
+    if (!customKey.trim()) {
+      setSaveMsg("Enter key!");
       setTimeout(() => setSaveMsg(""), 2500);
-    } else {
-      localStorage.removeItem("customGeminiKey");
-      localStorage.removeItem("customGeminiModel");
-      setIsSaved(false);
-      setSaveMsg("Removed!");
-      setTimeout(() => setSaveMsg(""), 2500);
+      return;
     }
+
+    localStorage.setItem("customGeminiKey", customKey.trim());
+    localStorage.setItem("customGeminiModel", selectedModel);
+    setIsSaved(true);
+    setSaveMsg("Saved!");
+    setTimeout(() => setSaveMsg(""), 2500);
   };
 
   const handleModelChange = (model) => {
