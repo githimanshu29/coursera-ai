@@ -94,7 +94,6 @@ export const generateCourseContent = async (req, res) => {
       const response = await ai.models.generateContent({
         model: aiModel,
         config: {
-          thinkingConfig: { thinkingBudget: 0 },
           tools: [{ googleSearch: {} }],
           responseMimeType: "text/plain",
         },
