@@ -87,7 +87,7 @@ export const generateCourseLayout = async (req, res) => {
       });
     }
 
-    const courseDetails = parsedResp.course;
+    const courseDetails = parsedResp.course || parsedResp.courseDetails || parsedResp;
 
     // Save to DB
     const course = await Course.create({
