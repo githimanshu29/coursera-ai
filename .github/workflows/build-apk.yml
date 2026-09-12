@@ -41,6 +41,8 @@ jobs:
       - name: Build Android APK
         working-directory: ./client/android
         run: |
+          sudo apt-get install -y dos2unix
+          dos2unix ./gradlew
           chmod +x ./gradlew
           ./gradlew assembleDebug
 
