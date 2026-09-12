@@ -1,11 +1,9 @@
 import React, { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { setCredentials } from "../../store/slices/authSlice.js";
 import { updateProfileApi } from "../../lib/api.js";
 
 const Profile = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, accessToken } = useSelector((state) => state.auth);
   const [name, setName] = useState(user?.name || "");
@@ -17,13 +15,6 @@ const Profile = () => {
   const fileInputRef = useRef(null);
 
   const isPro = user?.maxCredits > 20;
-
-  // Gemini API key (for free tier)
-  const [geminiKey, setGeminiKey] = useState(
-    localStorage.getItem("customGeminiKey") || ""
-  );
-  const [showKey, setShowKey] = useState(false);
-  const [keySaved, setKeySaved] = useState(false);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -41,11 +32,6 @@ const Profile = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSaveKey = () => {
-    localStorage.setItem("customGeminiKey", geminiKey.trim());
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 3000);
-  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -248,84 +234,6 @@ const Profile = () => {
         </form>
       </div>
 
-      {/* Gemini API Key card — only for free tier */}
-      {!isPro && (
-        <div
-          style={{
-            marginTop: "24px",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(167,139,250,0.2)",
-            borderRadius: "16px",
-            padding: "28px",
-          }}
-        >
-          <div style={{ marginBottom: "16px" }}>
-            <h3 style={{ color: "white", fontSize: "16px", fontWeight: "600", marginBottom: "4px" }}>
-              🔑 Gemini API Key
-            </h3>
-            <p style={{ color: "#9ca3af", fontSize: "13px" }}>
-              Required for course generation on the free tier. Your key is stored only in your browser.
-            </p>
-          </div>
-
-          <div style={{ position: "relative", marginBottom: "10px" }}>
-            <input
-              type={showKey ? "text" : "password"}
-              value={geminiKey}
-              onChange={(e) => setGeminiKey(e.target.value)}
-              placeholder="AIza..."
-              style={{
-                width: "100%", padding: "12px 44px 12px 16px", borderRadius: "10px",
-                background: "rgba(0,0,0,0.2)", border: "1px solid rgba(167,139,250,0.3)",
-                color: "white", fontSize: "14px", outline: "none", boxSizing: "border-box",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "rgba(124,58,237,0.7)")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(167,139,250,0.3)")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              style={{
-                position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer", fontSize: "16px", padding: "2px",
-              }}
-            >
-              {showKey ? "🙈" : "👁️"}
-            </button>
-          </div>
-
-          <p style={{ color: "#6b7280", fontSize: "12px", marginBottom: "14px" }}>
-            Get a free key at{" "}
-            <a
-              href="https://aistudio.google.com/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#a78bfa", textDecoration: "none" }}
-            >
-              aistudio.google.com/apikey
-            </a>
-          </p>
-
-          <button
-            type="button"
-            onClick={handleSaveKey}
-            style={{
-              padding: "10px 20px", borderRadius: "10px",
-              background: keySaved
-                ? "rgba(74,222,128,0.15)"
-                : "rgba(124,58,237,0.15)",
-              border: keySaved
-                ? "1px solid rgba(74,222,128,0.3)"
-                : "1px solid rgba(124,58,237,0.3)",
-              color: keySaved ? "#4ade80" : "#a78bfa",
-              fontSize: "13px", fontWeight: "600", cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {keySaved ? "✓ Key Saved!" : "Save API Key"}
-          </button>
-        </div>
-      )}
     </div>
   );
 };

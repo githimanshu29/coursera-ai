@@ -130,10 +130,10 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
               🔑 No Gemini API Key Found
             </p>
             <p style={{ color: "#9ca3af", fontSize: "13px", marginBottom: "14px" }}>
-              Free tier requires a Gemini API key. Add it once in your Profile.
+              Free tier requires a Gemini API key. Add it once in your Billing settings.
             </p>
             <button
-              onClick={() => { onClose(); navigate("/workspace/profile"); }}
+              onClick={() => { onClose(); navigate("/workspace/billing"); }}
               style={{
                 padding: "9px 20px", borderRadius: "8px",
                 background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
@@ -141,7 +141,7 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
                 fontSize: "13px", fontWeight: "600", cursor: "pointer",
               }}
             >
-              Go to Profile →
+              Go to Billing ?
             </button>
           </div>
         ) : error ? (
