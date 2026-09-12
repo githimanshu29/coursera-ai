@@ -5,7 +5,7 @@ import WorkspaceLayout from "./components/ui/layout/WorkspaceLayout.jsx";
 import ProtectedRoute from "./components/ui/layout/ProtectedRoute.jsx";
 import Dashboard from "./pages/workspace/Dashboard.jsx";
 import Billing from "./pages/workspace/Billing.jsx";
-import Profile from "./pages/workspace/Profile.jsx";
+import Profile from "./pages/workspace/Profile.jsx";import MyQuizzes from "./pages/workspace/MyQuizzes.jsx";
 
 import EditCourse from "./pages/workspace/EditCourse.jsx";
 import ViewCourse from "./pages/workspace/ViewCourse.jsx";
@@ -30,7 +30,7 @@ const App = () => {
           path="/workspace/step-build/:courseId"
           element={<StepBuildCourse />}
         />
-        <Route path="/workspace/billing" element={<Billing />} />
+        <Route path="/workspace/billing" element={<Billing />} />        <Route path="/workspace/quizzes" element={<MyQuizzes />} />
         <Route path="/workspace/profile" element={<Profile />} />
         <Route
           path="/workspace/edit-course/:courseId"
