@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CourseraAI</string>
+    <string name="title_activity_main">CourseraAI</string>
+    <string name="package_name">com.coursera.ai</string>
+    <string name="custom_url_scheme">com.coursera.ai</string>
+</resources>
