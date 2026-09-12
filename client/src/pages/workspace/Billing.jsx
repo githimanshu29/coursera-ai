@@ -291,6 +291,10 @@ const Billing = () => {
                   </option>
                 ))}
               </select>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#9ca3af", marginTop: "8px" }}>
+                <span>Free Tier Requests Today:</span>
+                <span style={{ color: usageToday > 0 ? "#a78bfa" : "#9ca3af", fontWeight: "600" }}>{usageToday}</span>
+              </div>
             </div>
 
             {/* Save row */}
