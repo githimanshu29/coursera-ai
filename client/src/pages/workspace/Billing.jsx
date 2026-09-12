@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { getMeApi } from "../../../lib/api.js";
-import { updateCredits } from "../../../store/slices/authSlice.js";
+import { getMeApi } from "../../lib/api.js";
+import { updateCredits } from "../../store/slices/authSlice.js";
 
 const Billing = () => {
   const { user } = useSelector((state) => state.auth);
