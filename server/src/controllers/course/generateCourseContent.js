@@ -83,7 +83,8 @@ export const generateCourseContent = async (req, res) => {
     if (aiError) {
       return res.status(403).json({ success: false, message: aiError });
     }
-    const promises = chapters.map(async (chapter) => {
+    const courseContent = [];
+    for (const chapter of chapters) { 
       // ── Call Gemini for this chapter ──
       const contents = [
         {
@@ -137,14 +138,14 @@ export const generateCourseContent = async (req, res) => {
       // ── Fetch YouTube videos for this chapter ──
       const youtubeVideo = await getYoutubeVideos(chapter.chapterName);
 
-      return {
+      courseContent.push({
         youtubeVideo,
         courseData: JSONResp,
-      };
-    });
+      });
 
-    // wait for all chapters to finish simultaneously
-    const courseContent = await Promise.all(promises);
+      // Add a small delay between requests to avoid burst rate limits (503 / 429)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
 
     // ── Save to DB ──
     course.courseContent = courseContent;
