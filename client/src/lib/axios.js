@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5005/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://coursera-ai.onrender.com/api",
   withCredentials: true, // sends cookies (refreshToken) automatically
 });
 
@@ -31,7 +31,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:6000/api/auth/refresh-token",
+          "https://coursera-ai.onrender.com/api/auth/refresh-token",
           {},
           { withCredentials: true }
         );
