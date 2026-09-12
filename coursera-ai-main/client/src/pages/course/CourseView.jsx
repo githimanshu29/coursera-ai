@@ -213,7 +213,7 @@ const CourseView = () => {
             <span
               style={{ color: "white", fontWeight: "700", fontSize: "16px" }}
             >
-              Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+              coursera<span style={{ color: "#a78bfa" }}>.ai</span>
             </span>
           </div>
 

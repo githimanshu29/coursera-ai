@@ -272,7 +272,7 @@ const Landing = () => {
                             </svg>
                         </div>
                         <span style={{ color: "white", fontWeight: "700", fontSize: "18px", letterSpacing: "-0.3px", fontFamily: "'Sora', sans-serif" }}>
-                            Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+                            coursera<span style={{ color: "#a78bfa" }}>.ai</span>
                         </span>
                     </div>
 
@@ -403,7 +403,7 @@ const Landing = () => {
                 <div style={{ textAlign: "center", marginBottom: "56px" }}>
                     <span style={{ color: "#34d399", fontSize: "13px", fontWeight: "700", letterSpacing: "2px", textTransform: "uppercase", fontFamily: "'Sora', sans-serif", display: "block", marginBottom: "12px" }}>ROADMAP</span>
                     <h2 className="section-title" style={{ color: "white", fontSize: "36px", fontWeight: "800", marginBottom: "16px", fontFamily: "'Sora', sans-serif", letterSpacing: "-0.8px" }}>
-                        The Future of Coursera-AI
+                        The Future of coursera.ai
                     </h2>
                     <p style={{ color: "#6b7280", fontSize: "16px", maxWidth: "520px", margin: "0 auto", lineHeight: "1.7", fontFamily: "'DM Sans', sans-serif" }}>
                         Powerful features in active development — coming very soon
@@ -444,11 +444,11 @@ const Landing = () => {
                         </svg>
                     </div>
                     <span style={{ color: "white", fontWeight: "700", fontSize: "16px", fontFamily: "'Sora', sans-serif" }}>
-                        Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+                        coursera<span style={{ color: "#a78bfa" }}>.ai</span>
                     </span>
                 </div>
                 <p style={{ color: "#374151", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>
-                    © 2025 Coursera-AI · Built with ❤️ and Gemini AI
+                    © 2025 coursera.ai · Built with ❤️ and Gemini AI
                 </p>
             </footer>
         </div>

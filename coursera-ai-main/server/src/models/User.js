@@ -12,10 +12,9 @@ const userSchema=new mongoose.Schema(
             required:true,
             unique:true,
         },
-         password: {
-      type: String,
-      required: true,
-    },
+        password: { type: String, required: true },
+        creditsUsed: { type: Number, default: 0 },
+        maxCredits: { type: Number, default: 20 },
 
     gender:{
         type:String,
@@ -30,6 +29,14 @@ const userSchema=new mongoose.Schema(
      refreshToken: {
       type: String,
       default: "",
+    },
+    creditsUsed: {
+      type: Number,
+      default: 0,
+    },
+    maxCredits: {
+      type: Number,
+      default: 20,
     },
 
     },

@@ -64,7 +64,7 @@ const LiveBuildWindow = ({
           ))}
         </div>
         <span style={{ color: "#6b7280", fontSize: "11px" }}>
-          coursera-ai — chapter builder
+          coursera.ai — chapter builder
         </span>
         {isGenerating && (
           <div

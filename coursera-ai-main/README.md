@@ -1,4 +1,4 @@
-# Coursera-AI — AI-Powered Learning Platform
+# coursera.ai — AI-Powered Learning Platform
 
 <div align="center">
 
@@ -7,7 +7,7 @@
 **Transform any topic into a comprehensive course with AI-generated chapters, rich content, and curated videos.**
 
 
-[![GitHub](https://img.shields.io/badge/GitHub-coursera--ai-181717?style=for-the-badge&logo=github)](https://github.com/githimanshu29/coursera-ai)
+[![GitHub](https://img.shields.io/badge/GitHub-coursera--ai-181717?style=for-the-badge&logo=github)](https://github.com/githimanshu29/coursera.ai)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb)](https://mongodb.com)
@@ -16,9 +16,9 @@
 
 ---
 
-## What is Coursera-AI?
+## What is coursera.ai?
 
-Coursera-AI is a full-stack AI-powered learning platform that allows anyone to generate a complete, structured course on any topic using Google Gemini AI. Enter a subject, configure your preferences, and the platform automatically builds a full curriculum — complete with chapter-by-chapter content, curated YouTube videos, and progress tracking.
+coursera.ai is a full-stack AI-powered learning platform that allows anyone to generate a complete, structured course on any topic using Google Gemini AI. Enter a subject, configure your preferences, and the platform automatically builds a full curriculum — complete with chapter-by-chapter content, curated YouTube videos, and progress tracking.
 
 The platform is built for learners who want personalized courses tailored to their exact goals — from beginner SQL to advanced machine learning, football tactics to digital marketing.
 
@@ -109,7 +109,7 @@ The platform is built for learners who want personalized courses tailored to the
 ## Project Architecture
 
 ```
-New-Coursera-AI/
+New-coursera.ai/
 ├── client/                          # React frontend (Vite)
 │   └── src/
 │       ├── pages/
@@ -311,8 +311,8 @@ Every request logs: method, path, status code, duration, userId
 
 ### Clone the repository
 ```bash
-git clone https://github.com/githimanshu29/coursera-ai.git
-cd coursera-ai
+git clone https://github.com/githimanshu29/coursera.ai.git
+cd coursera.ai
 ```
 
 ### Start Redis (Docker)

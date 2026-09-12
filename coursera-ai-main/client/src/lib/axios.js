@@ -1,16 +1,22 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5005/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://coursera-ai.onrender.com/api",
   withCredentials: true, // sends cookies (refreshToken) automatically
 });
 
-// attach accessToken to every request
+// attach accessToken and custom Gemini key to every request
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  const customGeminiKey = localStorage.getItem("customGeminiKey");
+  if (customGeminiKey) {
+    config.headers["x-gemini-key"] = customGeminiKey;
+  }
+  
   return config;
 });
 
@@ -25,7 +31,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:6000/api/auth/refresh-token",
+          "https://coursera-ai.onrender.com/api/auth/refresh-token",
           {},
           { withCredentials: true }
         );

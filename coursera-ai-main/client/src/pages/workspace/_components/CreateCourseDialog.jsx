@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { updateCredits } from "../../../store/slices/authSlice.js";
 import { generateCourseLayoutApi } from "../../../lib/api.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -8,6 +10,7 @@ const CATEGORIES = ["Technology", "Science", "Mathematics", "Language", "Busines
 
 const CreateCourseDialog = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -30,7 +33,15 @@ const CreateCourseDialog = ({ isOpen, onClose }) => {
     setError("");
     try {
       const cid = uuidv4();
-      await generateCourseLayoutApi({ cid, ...formData, noOfChapters: Number(formData.noOfChapters) });
+      const res = await generateCourseLayoutApi({ cid, ...formData, noOfChapters: Number(formData.noOfChapters) });
+      
+      if (res.data.creditsUsed !== undefined) {
+        dispatch(updateCredits({
+          creditsUsed: res.data.creditsUsed,
+          maxCredits: res.data.maxCredits,
+        }));
+      }
+
       onClose();
       navigate(`/workspace/edit-course/${cid}`);
     } catch (err) {

@@ -1,5 +1,5 @@
 import Course from "../../models/Course.js";
-import ai from "../../lib/gemini.js";
+import { getAIClient } from "../../lib/gemini.js";
 import axios from "axios";
 import { jsonrepair } from "jsonrepair";
 
@@ -77,6 +77,7 @@ export const generateCourseContent = async (req, res) => {
     const chapters = course.courseJson?.chapters || [];
 
     // ── Process all chapters simultaneously with Promise.all ──
+    const ai = getAIClient(req);
     const promises = chapters.map(async (chapter) => {
       // ── Call Gemini for this chapter ──
       const contents = [

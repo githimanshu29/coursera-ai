@@ -72,6 +72,22 @@ const Register = () => {
       fontFamily: "'Inter', sans-serif",
     }}>
 
+      {/* Global Loading Overlay */}
+      {isLoading && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 100,
+          background: "rgba(10, 15, 30, 0.7)", backdropFilter: "blur(4px)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px"
+        }}>
+          <span style={{
+            width: "48px", height: "48px", border: "4px solid rgba(124,58,237,0.3)",
+            borderTop: "4px solid #a78bfa", borderRadius: "50%",
+            display: "inline-block", animation: "spin 1s linear infinite"
+          }} />
+          <p style={{ color: "white", fontSize: "14px", fontWeight: "600", letterSpacing: "0.5px" }}>Creating Account...</p>
+        </div>
+      )}
+
       {/* bg blobs */}
       <div style={{
         position: "absolute", top: "-100px", left: "-100px",
@@ -114,7 +130,7 @@ const Register = () => {
             </svg>
           </div>
           <span style={{ color: "white", fontWeight: "700", fontSize: "18px", letterSpacing: "-0.3px" }}>
-            Coursera<span style={{ color: "#a78bfa" }}>-AI</span>
+            coursera<span style={{ color: "#a78bfa" }}>.ai</span>
           </span>
         </div>
 
