@@ -4,6 +4,15 @@ import { getAIClient } from "../../lib/gemini.js";
 
 
 
+
+const PROMPT = `Generate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
+
+Remember it is not neccessary that all the chapters have same number of topics, any  chapter can have different number of topics according to chapter's need.
+
+strict order: Generate layout such as the following error never appear-> "Error parsing AI response as JSON: course layout error SyntaxError: Unexpected token 'H', \"Here's the\"... is not valid JSON"
+
+Return strictly JSON output only.`;
+
 export const generateCourseLayout = async (req, res) => {
   try {
     const {
