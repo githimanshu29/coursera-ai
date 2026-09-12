@@ -31,6 +31,14 @@ const userSchema=new mongoose.Schema(
       type: String,
       default: "",
     },
+    creditsUsed: {
+      type: Number,
+      default: 0,
+    },
+    maxCredits: {
+      type: Number,
+      default: 20,
+    },
 
     },
     {timestamps:true}
