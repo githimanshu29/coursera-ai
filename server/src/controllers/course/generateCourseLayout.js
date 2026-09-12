@@ -2,43 +2,7 @@ import Course from "../../models/Course.js";
 import User from "../../models/User.js";
 import { getAIClient } from "../../lib/gemini.js";
 
-const PROMPT = `enerate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
 
-
-strict order: Generate layout such as the following error never appear-> "Error parsing AI response as JSON: course layout error SyntaxError: Unexpected token 'H', "Here's the"... is not valid JSON
-    at JSON.parse (<anonymous>)
-    at POST (app\api\generate-course-layout\route.jsx:91:28)
-  89 |
-  90 |             //console.log("Himanshu course  layout-Rawjson", RawJson);
-> 91 |             JSONResp = JSON.parse(RawJson);
-     |                            ^
-  92 |             //console.log("Himanshu course layout-JsonREsp", JSONResp);
-  93 |         } catch (parseError) {
-  94 |             console.error("Error parsing AI response as JSON: course layout error", parseError);"
-
-Schema:
-
-{
-  "course": {
-    "name": "string",
-    "description": "string",
-    "category": "string",
-    "level": "string",
-    "includeVideo": "boolean",
-    "noOfChapters": "number",
-    "bannerImagePrompt": "string",
-    "chapters": [
-      {
-        "chapterName": "string",
-        "duration": "string",
-        "topics": [
-          "string"
-        ]
-      }
-    ]
-  }
-}, User Input:
-`;
 
 export const generateCourseLayout = async (req, res) => {
   try {
@@ -52,23 +16,19 @@ export const generateCourseLayout = async (req, res) => {
       includeVideo,
     } = req.body;
 
-    // ── Check Credits (if not using BYOK) ──
-    const isUsingBYOK = !!req.headers["x-gemini-key"];
+    // Fetch user
     const user = await User.findById(req.user._id);
-    
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    if (!isUsingBYOK && user.creditsUsed >= user.maxCredits) {
-      return res.status(402).json({
-        success: false,
-        message: "You have reached your free generation limit. Please upgrade your plan or provide your own Gemini API key.",
-      });
+    // Pro users get server key; free tier must provide BYOK via x-gemini-key header
+    const { client: ai, error: aiError } = getAIClient(req, user);
+    if (aiError) {
+      return res.status(403).json({ success: false, message: aiError });
     }
 
-    // ── Call Gemini ──
-    const ai = getAIClient(req);
+    // Call Gemini
     const contents = [
       {
         role: "user",
@@ -99,9 +59,9 @@ export const generateCourseLayout = async (req, res) => {
       contents,
     });
 
-    const rawResp = response.candidates[0]?.content.parts[0]?.text; // .text is actuall text string from AI, which is in JSON format as per our prompt. but sometimes it may come with markdown fences (```json ... ```), so we need to clean it before parsing.
+    const rawResp = response.candidates[0]?.content.parts[0]?.text;
 
-    // ── Clean markdown fences if present ──
+    // Clean markdown fences if present
     const cleanJson = rawResp
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -112,17 +72,16 @@ export const generateCourseLayout = async (req, res) => {
       parsedResp = JSON.parse(cleanJson);
     } catch (parseError) {
       console.error("JSON parse error(from generateCourseLayout):", parseError.message);
-      console.error("Raw AI response:", rawResp);
       return res.status(500).json({
         success: false,
-        message: "AI returned invalid JSON (from -> generateCourseLayout)",
+        message: "AI returned invalid JSON",
         error: parseError.message,
       });
     }
 
     const courseDetails = parsedResp.course;
 
-    // ── Save to DB ──
+    // Save to DB
     const course = await Course.create({
       cid,
       name: courseDetails.name,
@@ -136,18 +95,10 @@ export const generateCourseLayout = async (req, res) => {
       createdBy: req.user._id,
     });
 
-    // ── Update Credits ──
-    if (!isUsingBYOK) {
-      user.creditsUsed += 1;
-      await user.save();
-    }
-
     res.status(201).json({
       success: true,
       message: "Course layout generated successfully",
       course,
-      creditsUsed: isUsingBYOK ? undefined : user.creditsUsed,
-      maxCredits: isUsingBYOK ? undefined : user.maxCredits,
     });
   } catch (error) {
     console.error("generateCourseLayout error:", error.message);
@@ -158,25 +109,3 @@ export const generateCourseLayout = async (req, res) => {
     });
   }
 };
-
-
-
-/*
- const cleanJson = rawResp
-  .replace(/```json/g, "")   // removes ```json
-  .replace(/```/g, "")       // removes closing ```
-  .trim();                   // removes whitespace/newlines
-```
-
-Before cleaning:
-```
-```json
-{"course": {"name": "SQL Fundamentals"}}
-```
-```
-
-After cleaning:
-```
-{"course": {"name": "SQL Fundamentals"}}
- 
- */

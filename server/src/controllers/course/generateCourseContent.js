@@ -77,7 +77,11 @@ export const generateCourseContent = async (req, res) => {
     const chapters = course.courseJson?.chapters || [];
 
     // ── Process all chapters simultaneously with Promise.all ──
-    const ai = getAIClient(req);
+    const user = await require("../../models/User.js").default.findById(req.user._id);
+    const { client: ai, error: aiError } = getAIClient(req, user);
+    if (aiError) {
+      return res.status(403).json({ success: false, message: aiError });
+    }
     const promises = chapters.map(async (chapter) => {
       // ── Call Gemini for this chapter ──
       const contents = [
