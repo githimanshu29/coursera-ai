@@ -92,13 +92,13 @@ export const generateCourseLayout = async (req, res) => {
     // Save to DB
     const course = await Course.create({
       cid,
-      name: courseDetails.name,
-      description: courseDetails.description,
-      category: courseDetails.category,
-      level: courseDetails.level,
-      noOfChapters: courseDetails.noOfChapters,
+      name: courseDetails.name || name,
+      description: courseDetails.description || description,
+      category: courseDetails.category || category,
+      level: courseDetails.level || level,
+      noOfChapters: courseDetails.noOfChapters || courseDetails.chapters?.length || courseDetails.numberOfChapters || Number(noOfChapters),
       includeVideo: courseDetails.includeVideo || false,
-      bannerImagePrompt: courseDetails.bannerImagePrompt,
+      bannerImagePrompt: courseDetails.bannerImagePrompt || "",
       courseJson: courseDetails,
       createdBy: req.user._id,
     });
