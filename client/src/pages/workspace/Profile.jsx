@@ -1,14 +1,17 @@
 import React, { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setCredentials } from "../../store/slices/authSlice.js";
+import { updateProfileApi } from "../../lib/api.js";
 
 const Profile = () => {
   const dispatch = useDispatch();
   const { user, accessToken } = useSelector((state) => state.auth);
   const [name, setName] = useState(user?.name || "");
   const [isSaving, setIsSaving] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
+  const [avatarBase64, setAvatarBase64] = useState(null);
   const [saveMsg, setSaveMsg] = useState("");
+  const [saveErr, setSaveErr] = useState("");
   const fileInputRef = useRef(null);
 
   const isPro = user?.maxCredits > 20;
@@ -16,24 +19,50 @@ const Profile = () => {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Warn if file is too large (>1MB after base64 encode)
+    if (file.size > 750000) {
+      setSaveErr("Image too large. Please pick an image under 750KB.");
+      return;
+    }
+    setSaveErr("");
     const reader = new FileReader();
-    reader.onload = (ev) => setAvatarPreview(ev.target.result);
+    reader.onload = (ev) => {
+      setAvatarPreview(ev.target.result);
+      setAvatarBase64(ev.target.result);
+    };
     reader.readAsDataURL(file);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    // Optimistically update the name in Redux so sidebar/header reflect it
-    dispatch(setCredentials({ user: { ...user, name }, accessToken }));
-    setTimeout(() => {
+    setSaveMsg("");
+    setSaveErr("");
+    try {
+      const payload = { name };
+      if (avatarBase64) payload.avatar = avatarBase64;
+
+      const res = await updateProfileApi(payload);
+      if (res.data.success) {
+        dispatch(
+          setCredentials({
+            user: { ...user, ...res.data.user },
+            accessToken,
+          })
+        );
+        setAvatarBase64(null); // clear pending upload
+        setSaveMsg("Profile saved successfully!");
+        setTimeout(() => setSaveMsg(""), 3000);
+      }
+    } catch (err) {
+      setSaveErr(err?.response?.data?.message || "Failed to save. Try again.");
+    } finally {
       setIsSaving(false);
-      setSaveMsg("Profile updated!");
-      setTimeout(() => setSaveMsg(""), 3000);
-    }, 800);
+    }
   };
 
   const avatarLetter = user?.name?.charAt(0).toUpperCase() || "U";
+  const showAvatar = avatarPreview && avatarPreview.startsWith("data:");
 
   return (
     <div
@@ -71,9 +100,8 @@ const Profile = () => {
             marginBottom: "32px",
           }}
         >
-          {/* Avatar circle */}
           <div style={{ position: "relative" }}>
-            {avatarPreview ? (
+            {showAvatar ? (
               <img
                 src={avatarPreview}
                 alt="avatar"
@@ -83,6 +111,7 @@ const Profile = () => {
                   borderRadius: "50%",
                   objectFit: "cover",
                   boxShadow: "0 4px 20px rgba(124,58,237,0.4)",
+                  border: avatarBase64 ? "2px solid #7c3aed" : "none",
                 }}
               />
             ) : (
@@ -103,6 +132,22 @@ const Profile = () => {
               >
                 {avatarLetter}
               </div>
+            )}
+            {/* Purple dot indicator when unsaved avatar pending */}
+            {avatarBase64 && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "2px",
+                  right: "2px",
+                  width: "14px",
+                  height: "14px",
+                  borderRadius: "50%",
+                  background: "#7c3aed",
+                  border: "2px solid #0a0f1e",
+                }}
+                title="Unsaved avatar - click Save Changes"
+              />
             )}
           </div>
 
@@ -143,8 +188,13 @@ const Profile = () => {
                 marginTop: "6px",
               }}
             >
-              JPG, PNG or GIF
+              JPG, PNG or GIF · max 750KB
             </p>
+            {avatarBase64 && (
+              <p style={{ color: "#a78bfa", fontSize: "12px", marginTop: "4px" }}>
+                ⬆ Click Save Changes to apply
+              </p>
+            )}
           </div>
         </div>
 
@@ -212,11 +262,7 @@ const Profile = () => {
               }}
             />
             <p
-              style={{
-                color: "#6b7280",
-                fontSize: "12px",
-                marginTop: "6px",
-              }}
+              style={{ color: "#6b7280", fontSize: "12px", marginTop: "6px" }}
             >
               Email cannot be changed.
             </p>
@@ -252,29 +298,24 @@ const Profile = () => {
                 boxSizing: "border-box",
               }}
             >
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span>{isPro ? "⭐" : "🆓"}</span>
                 {isPro ? "Pro Plan" : "Free Tier"}
               </span>
               {!isPro && (
-                <span
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    color: "#6b7280",
-                  }}
-                >
+                <span style={{ fontSize: "12px", fontWeight: "500", color: "#6b7280" }}>
                   {user?.creditsUsed ?? 0} / {user?.maxCredits ?? 20} credits used
                 </span>
               )}
             </div>
           </div>
+
+          {/* Error */}
+          {saveErr && (
+            <p style={{ color: "#f87171", fontSize: "13px", marginTop: "-8px" }}>
+              ✗ {saveErr}
+            </p>
+          )}
 
           {/* Save button */}
           <button

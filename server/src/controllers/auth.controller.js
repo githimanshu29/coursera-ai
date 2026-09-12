@@ -243,3 +243,33 @@ export const getMe = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
+
+// UPDATE PROFILE (name + avatar)
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, avatar } = req.body;
+    const userId = req.user._id;
+
+    const updateFields = {};
+    if (name && name.trim()) updateFields.name = name.trim();
+    if (avatar) updateFields.avatar = avatar; // base64 data URL
+
+    const user = await User.findByIdAndUpdate(userId, updateFields, { new: true });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        creditsUsed: user.creditsUsed,
+        maxCredits: user.maxCredits,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
