@@ -5,18 +5,23 @@ const axiosInstance = axios.create({
   withCredentials: true, // sends cookies (refreshToken) automatically
 });
 
-// attach accessToken and custom Gemini key to every request
+// attach accessToken, custom Gemini key and model to every request
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   const customGeminiKey = localStorage.getItem("customGeminiKey");
   if (customGeminiKey) {
     config.headers["x-gemini-key"] = customGeminiKey;
   }
-  
+
+  const customGeminiModel = localStorage.getItem("customGeminiModel");
+  if (customGeminiModel) {
+    config.headers["x-gemini-model"] = customGeminiModel;
+  }
+
   return config;
 });
 
