@@ -160,7 +160,7 @@ export const generateCourseContent = async (req, res) => {
     console.error("generateCourseContent error(from generateCourseContent):", error.message);
     res.status(500).json({
       success: false,
-      message: "Failed to generate course content",
+      message: `Failed to generate course content: ${error.message || "Unknown error"}`, /* dynamic error */
       error: error.message,
     });
   }

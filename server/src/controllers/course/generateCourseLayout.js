@@ -103,7 +103,7 @@ export const generateCourseLayout = async (req, res) => {
     console.error("generateCourseLayout error:", error.message);
     res.status(500).json({
       success: false,
-      message: "Failed to generate course layout",
+      message: `Failed to generate course layout: ${error.message || "Unknown error"}`, /* dynamic error */
       error: error.message,
     });
   }
