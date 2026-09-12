@@ -477,7 +477,7 @@ const MyQuizzes = () => {
 const QuizReview = ({ quiz }) => {
   const [currentQ, setCurrentQ] = useState(0);
 
-  if (!quiz.questions?.length) return null;
+  if (!quiz.questions?.length) return <div style={{padding: '20px', color: 'red'}}>Questions are missing from backend!</div>;
 
   const q = quiz.questions[currentQ];
   const userAnswer = quiz.userAnswers?.[currentQ];
