@@ -273,12 +273,20 @@ const EditCourse = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [buildLogs, setBuildLogs] = useState([]);
   const [buildNotice, setBuildNotice] = useState("");
-  const MODEL_OPTIONS = {
-    groq: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"],
-    gemini: ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
-  };
-  const [modelProvider, setModelProvider] = useState("groq");
-  const [modelName, setModelName] = useState(MODEL_OPTIONS.groq[1]);
+  const GEMINI_MODELS = [
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.6-flash",
+      "gemini-3.7-flash",
+      "gemini-3.8-flash",
+      "gemini-3-flash-preview"
+  ];
+  const modelProvider = "gemini";
+  const [modelName, setModelName] = useState(
+    localStorage.getItem("customGeminiModel") || "gemini-2.5-flash-lite"
+  );
 
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -516,50 +524,17 @@ const EditCourse = () => {
             }}
           >
             <select
-              value={modelProvider}
-              onChange={(e) => {
-                const nextProvider = e.target.value;
-                setModelProvider(nextProvider);
-                setModelName(MODEL_OPTIONS[nextProvider][0]);
-              }}
-              disabled={isGenerating}
-              style={{
-                padding: "10px 12px",
-                borderRadius: "10px",
-                background: "rgba(31,41,55,0.8)",
-                border: "1px solid rgba(75,85,99,0.5)",
-                color: "white",
-                fontSize: "13px",
-                cursor: "pointer",
-                animation: "attentionGlow 2.4s ease-in-out infinite",
-                opacity: isGenerating ? 0.6 : 1,
-              }}
-            >
-              <option value="groq">Groq</option>
-              <option value="gemini">Gemini</option>
-            </select>
-            <select
-              value={modelName}
-              onChange={(e) => setModelName(e.target.value)}
-              disabled={isGenerating}
-              style={{
-                padding: "10px 12px",
-                borderRadius: "10px",
-                background: "rgba(31,41,55,0.8)",
-                border: "1px solid rgba(75,85,99,0.5)",
-                color: "white",
-                fontSize: "13px",
-                cursor: "pointer",
-                animation: "attentionGlow 2.4s ease-in-out infinite",
-                opacity: isGenerating ? 0.6 : 1,
-              }}
-            >
-              {MODEL_OPTIONS[modelProvider].map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
-            </select>
+                value={modelName}
+                onChange={(e) => {
+                  setModelName(e.target.value);
+                  localStorage.setItem("customGeminiModel", e.target.value);
+                }}
+                disabled={isGenerating}
+              >
+                {GEMINI_MODELS.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
           </div>
 
           {/* generation options */}
