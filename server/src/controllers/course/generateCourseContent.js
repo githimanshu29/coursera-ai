@@ -119,15 +119,54 @@ export const generateCourseContent = async (req, res) => {
             tempObject = tempObject[0] || {};
           }
 
+        // Helper to find content array recursively
+        const findContentArray = (obj) => {
+          if (Array.isArray(obj)) return obj;
+          if (typeof obj === 'object' && obj !== null) {
+            if (Array.isArray(obj.content)) return obj.content;
+            if (Array.isArray(obj.topics)) return obj.topics;
+            if (Array.isArray(obj.Content)) return obj.Content;
+            if (Array.isArray(obj.Topics)) return obj.Topics;
+            
+            for (const key in obj) {
+              const val = obj[key];
+              if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
+                return val; // First array of objects is likely the content
+              }
+              if (typeof val === 'object' && val !== null) {
+                const found = findContentArray(val);
+                if (found.length > 0) return found;
+              }
+            }
+          }
+          return [];
+        };
+
+        const rawContentArray = findContentArray(tempObject);
+
         // remap inconsistent AI keys to our schema
         JSONResp = {
-          chapterName: tempObject.chapterName,
-          content: (tempObject.content || tempObject.topics || []).map(
-            (item) => ({
-              topic: item.topic || item.title,
-              htmlContent: item.htmlContent || item.content || item.text,
-            })
-          ),
+          chapterName: tempObject.chapterName || tempObject.ChapterName || chapter.chapterName,
+          content: rawContentArray.map((item) => {
+            // Extract best guess for topic title
+            let t = item.topic || item.title || item.Topic || item.Title;
+            if (!t) {
+              const strValues = Object.values(item).filter(v => typeof v === 'string' && v.length < 100);
+              t = strValues.length > 0 ? strValues[0] : "Untitled Topic";
+            }
+            
+            // Extract best guess for HTML content
+            let h = item.htmlContent || item.content || item.text || item.HtmlContent || item.Content;
+            if (!h) {
+              const longStrings = Object.values(item).filter(v => typeof v === 'string' && v.length >= 100);
+              h = longStrings.length > 0 ? longStrings[0] : (Object.values(item)[1] || "");
+            }
+
+            return {
+              topic: t,
+              htmlContent: h,
+            };
+          }),
         };
 
         console.log("✅ Parsed chapter:", chapter.chapterName);
