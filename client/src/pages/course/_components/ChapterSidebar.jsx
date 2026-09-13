@@ -23,7 +23,10 @@ const ChapterSidebar = ({
   const progress =
     totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
 
-  const builtChapters = course?.chaptersBuilt || (course?.courseContent ? Object.keys(course.courseContent).length : 0) || 0;
+  const totalChapterCount = course?.courseJson?.chapters?.length || 0;
+  const builtChapters = course?.status === "READY"
+    ? totalChapterCount // all chapters unlocked when course is complete
+    : (course?.chaptersBuilt || 0);
 
   const handleTopicClickInternal = (chIndex, tIndex) => {
     onTopicClick(chIndex, tIndex);
