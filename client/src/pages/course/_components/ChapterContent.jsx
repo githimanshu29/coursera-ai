@@ -8,6 +8,17 @@ import {
 } from "../../../lib/api.js";
 import QuizModal from "./QuizModal.jsx";
 
+
+const unescapeHTML = (html) => {
+  if (!html) return "";
+  return html
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+};
+
 const ChapterContent = ({
   course,
   activeChapterIndex,
