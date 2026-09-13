@@ -5,13 +5,28 @@ import { getAIClient } from "../../lib/gemini.js";
 
 
 
-const PROMPT = `Generate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt (Create a modern, flat-style 2D digital illustration representing user Topic. Include UI/UX elements such as mock-up screens, text blocks, icons, buttons, and creative workspace tools. Add symbolic elements related to user Course, like sticky notes, design components, and visual aids. Use a vibrant color palette [blues, purples, oranges] with a clean, professional look. The illustration should feel creative, tech-savvy, and educational, ideal for visualizing concepts in user Course) for Course Banner in 3d format. Chapter Name, Topic under each chapters, Duration for each chapters etc. in .JSON format only.
+const PROMPT = `Generate Learning Course depends on following details. In which Make sure to add Course Name, Description, Course Banner Image Prompt for Course Banner in 3d format, Chapter Name, Topic under each chapters, Duration for each chapters etc.
 
-Remember it is not neccessary that all the chapters have same number of topics, any  chapter can have different number of topics according to chapter's need.
+Remember it is not neccessary that all the chapters have same number of topics, any chapter can have different number of topics according to chapter's need.
 
 strict order: Generate layout such as the following error never appear-> "Error parsing AI response as JSON: course layout error SyntaxError: Unexpected token 'H', \"Here's the\"... is not valid JSON"
 
-Return strictly JSON output only.`;
+STRICT INSTRUCTION: You MUST return a JSON object with a "chapters" array. Each chapter must have a "chapterName", "about", "duration", and an array of "topics".
+Example Schema:
+{
+  "name": "Course Name",
+  "description": "Description",
+  "chapters": [
+    {
+      "chapterName": "Chapter 1",
+      "about": "What this chapter is about",
+      "duration": "1 hour",
+      "topics": ["Topic 1", "Topic 2"]
+    }
+  ]
+}
+
+Return strictly JSON output only. No markdown formatting (`\`json`), just the raw JSON string.`;
 
 export const generateCourseLayout = async (req, res) => {
   try {
@@ -88,7 +103,22 @@ export const generateCourseLayout = async (req, res) => {
       });
     }
 
-    const courseDetails = parsedResp.course || parsedResp.courseDetails || parsedResp;
+    let courseDetails = parsedResp.course || parsedResp.courseDetails || parsedResp;
+      
+      // If the AI returned an array directly, wrap it in an object with a 'chapters' key
+      if (Array.isArray(courseDetails)) {
+        courseDetails = { chapters: courseDetails };
+      }
+      
+      // If chapters is somehow missing but topics exists, wrap it
+      if (!courseDetails.chapters && courseDetails.topics) {
+        courseDetails.chapters = courseDetails.topics;
+      }
+      
+      // If it's completely missing, provide an empty array so frontend doesn't crash
+      if (!courseDetails.chapters) {
+        courseDetails.chapters = [];
+      }
 
     // Save to DB
     const course = await Course.create({
