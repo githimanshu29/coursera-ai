@@ -37,4 +37,25 @@ router.get(
 router.get("/:courseId", cacheMiddleware(600), getCourseById); // public — anyone can view
 router.delete("/:courseId", protect, deleteCourse);
 
+
+router.get("/debug-langchain", async (req, res) => {
+  try {
+    const Course = require("../models/Course").default;
+    const course = await Course.findOne({ name: /langchain/i }).sort({createdAt: -1});
+    if (!course) return res.json({ error: "not found" });
+    res.json({
+      name: course.name,
+      status: course.status,
+      chaptersArrayLength: course.courseJson?.chapters?.length,
+      courseContentType: typeof course.courseContent,
+      courseContentIsArray: Array.isArray(course.courseContent),
+      courseContentKeys: Object.keys(course.courseContent || {}),
+      courseJsonKeys: Object.keys(course.courseJson || {}),
+      chaptersBuilt: course.chaptersBuilt
+    });
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
 export default router;
