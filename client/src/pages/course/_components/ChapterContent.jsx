@@ -607,7 +607,7 @@ const ChapterContent = ({
                         marginBottom: "4px",
                       }}
                     >
-                      {topicData?.topic}
+                      {typeof topicData?.topic === 'object' ? (topicData.topic.topic || topicData.topic.title || JSON.stringify(topicData.topic)) : topicData?.topic}
                     </h2>
                     <div
                       style={{

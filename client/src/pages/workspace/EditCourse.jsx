@@ -261,7 +261,7 @@ const RoadmapTopicItem = ({ topic, index: topicIdx, chapterIndex, side }) => {
           transition: "color 0.3s ease",
         }}
       >
-        {topic}
+        {typeof topic === 'object' ? (topic.topic || topic.title || topic.topicName || topic.name || JSON.stringify(topic)) : topic}
       </span>
     </div>
   );
@@ -829,7 +829,7 @@ const EditCourse = () => {
                           {chapter.topics?.map((topic, j) => (
                             <RoadmapTopicItem
                               key={j}
-                              topic={topic}
+                              topic={typeof topic === 'object' ? (topic.topic || topic.title || topic.topicName || topic.name || JSON.stringify(topic)) : topic}
                               index={j}
                               chapterIndex={i}
                               side="left"
@@ -863,7 +863,7 @@ const EditCourse = () => {
                           {chapter.topics?.map((topic, j) => (
                             <RoadmapTopicItem
                               key={j}
-                              topic={topic}
+                              topic={typeof topic === 'object' ? (topic.topic || topic.title || topic.topicName || topic.name || JSON.stringify(topic)) : topic}
                               index={j}
                               chapterIndex={i}
                               side="right"
@@ -908,7 +908,7 @@ const EditCourse = () => {
                       {chapter.topics?.map((topic, j) => (
                         <RoadmapTopicItem
                           key={j}
-                          topic={topic}
+                          topic={typeof topic === 'object' ? (topic.topic || topic.title || topic.topicName || topic.name || JSON.stringify(topic)) : topic}
                           index={j}
                           chapterIndex={i}
                           side="right"

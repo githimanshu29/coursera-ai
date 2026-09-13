@@ -446,7 +446,7 @@ const ChapterSidebar = ({
                               lineHeight: "1.4",
                             }}
                           >
-                            {topic}
+                            {typeof topic === 'object' ? (topic.topic || topic.title || topic.topicName || topic.name || JSON.stringify(topic)) : topic}
                           </span> */}
 
                           <div
@@ -467,7 +467,7 @@ const ChapterSidebar = ({
                                 lineHeight: "1.4",
                               }}
                             >
-                              {topic}
+                              {typeof topic === 'object' ? (topic.topic || topic.title || topic.topicName || topic.name || JSON.stringify(topic)) : topic}
                             </span>
 
                             {/* 🔥 QUIZ + ARROW INDICATOR */}
