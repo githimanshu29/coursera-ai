@@ -331,7 +331,7 @@ const EditCourse = () => {
         ...prev,
         { type: "done", message: "Course generated successfully." },
       ]);
-      navigate("/workspace");
+      navigate("/course/" + courseId);
     } catch (err) {
       console.error("Generate content error:", err);
       setBuildLogs((prev) => [
