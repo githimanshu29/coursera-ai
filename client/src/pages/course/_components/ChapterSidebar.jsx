@@ -23,8 +23,7 @@ const ChapterSidebar = ({
   const progress =
     totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
 
-  const builtChapters =
-    course?.chaptersBuilt || course?.courseContent?.filter(Boolean).length || 0;
+  const builtChapters = course?.chaptersBuilt || (course?.courseContent ? Object.keys(course.courseContent).length : 0) || 0;
 
   const handleTopicClickInternal = (chIndex, tIndex) => {
     onTopicClick(chIndex, tIndex);
