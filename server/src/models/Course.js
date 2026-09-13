@@ -18,13 +18,13 @@ const courseSchema = new mongoose.Schema(
 
     // Step 1 — AI generated layout (chapters + topics structure)
 
-    courseJson: { type: Object, default: {} },
+    courseJson: { type: mongoose.Schema.Types.Mixed, default: {} },
 
     //courseJson is object containing chapters(array, which contains chapters as object). i,e each chapter of chapter[] is object as element.
 
     // Step 2 — AI generated full content
 
-    courseContent: { type: Object, default: {} },
+    courseContent: { type: mongoose.Schema.Types.Mixed, default: [] },
 
     status: {
       type: String,
