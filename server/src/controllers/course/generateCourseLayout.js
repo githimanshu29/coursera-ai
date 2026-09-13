@@ -45,6 +45,7 @@ export const generateCourseLayout = async (req, res) => {
           {
             text:
               PROMPT +
+              "\n\nSTRICT REQUIREMENT: You MUST generate EXACTLY " + noOfChapters + " chapters. Do not generate more or less than " + noOfChapters + " chapters.\n\n" +
               JSON.stringify({
                 name,
                 description,
