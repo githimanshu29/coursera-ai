@@ -1,3 +1,4 @@
+const isProduction = process.env.NODE_ENV === "production";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
@@ -63,8 +64,8 @@ export const register = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, //true in production
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     });
 
     res.status(201).json({
@@ -123,8 +124,8 @@ if (!email || !password) {
     //set refreshToken into cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, //true in production
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     });
 
     
@@ -186,8 +187,8 @@ export const refreshToken = async (req, res) => {
 
            res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     });
 
     res.status(200).json({
