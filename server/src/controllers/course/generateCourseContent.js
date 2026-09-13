@@ -1,4 +1,5 @@
 import Course from "../../models/Course.js";
+import { invalidateCache } from "../../middleware/cache.js";
 import User from "../../models/User.js";
 import { getAIClient } from "../../lib/gemini.js";
 import axios from "axios";
@@ -19,7 +20,8 @@ Rules:
 - Use double quotes for all keys and string values
 - No markdown (no \`\`\`)
 - No explanations or extra text
-- HTML content must be properly escaped inside strings
+- DO NOT HTML-escape the content. Use actual HTML tags (e.g. <h3>, <p>, <strong>).
+  - You MUST escape double quotes inside the HTML using backslashes (e.g. class=\"my-class\").
 
 Schema:
 {
@@ -154,9 +156,13 @@ export const generateCourseContent = async (req, res) => {
 
     // ── Save to DB ──
     course.courseContent = courseContent;
+    course.chaptersBuilt = chapters.length;
     course.status = "READY";
     course.markModified("courseContent");
     await course.save();
+
+    // Invalidate stale cache
+    await invalidateCache([`/api/courses/${courseId}`, /api/courses/user-courses]);
 
     res.status(200).json({
       success: true,

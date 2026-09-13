@@ -664,7 +664,7 @@ const ChapterContent = ({
               {/* html content */}
               <div
                 className="study-content"
-                dangerouslySetInnerHTML={{ __html: topicData?.htmlContent }}
+                dangerouslySetInnerHTML={{ __html: unescapeHTML(topicData?.htmlContent) }}
               />
 
               {/* mark complete button */}
