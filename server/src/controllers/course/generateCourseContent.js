@@ -110,7 +110,12 @@ export const generateCourseContent = async (req, res) => {
       try {
         // jsonrepair fixes broken/incomplete JSON from AI
         const repairedJSON = jsonrepair(cleanedResp);
-        const tempObject = JSON.parse(repairedJSON);
+        let tempObject = JSON.parse(repairedJSON);
+          
+          // If AI returned an array, extract the first item assuming it's the chapter
+          if (Array.isArray(tempObject)) {
+            tempObject = tempObject[0] || {};
+          }
 
         // remap inconsistent AI keys to our schema
         JSONResp = {
