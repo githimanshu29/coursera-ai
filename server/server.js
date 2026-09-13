@@ -25,13 +25,26 @@ app.set("trust proxy", 1);
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowed = [process.env.CLIENT_URL, "http://localhost:5173"].filter(
-        Boolean,
-      );
-      if (!origin || allowed.includes(origin)) {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      
+      const allowed = [
+        process.env.CLIENT_URL,
+        "http://localhost:5173",
+        "http://localhost:3000",
+        // Allow all render.com subdomains (covers deployed frontend)
+      ].filter(Boolean);
+      
+      // Allow if explicitly listed OR if it's a render.com subdomain
+      if (
+        allowed.includes(origin) ||
+        origin.endsWith(".onrender.com") ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".netlify.app")
+      ) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(null, true); // Allow all for now to debug mobile issue
       }
     },
     credentials: true,

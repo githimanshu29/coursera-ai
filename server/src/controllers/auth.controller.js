@@ -1,6 +1,7 @@
-const isProduction = process.env.NODE_ENV === "production";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+
+const isProduction = process.env.NODE_ENV === "production";
 
 // helper functions to generate tokens
 const generateAccessToken = (userId) => {
@@ -30,15 +31,8 @@ export const register = async (req, res) => {
     }
 
     // create user (password auto hashed by pre save hook)
-    const user = await User.create({ 
-        name, 
-        email, 
-        password, 
-        gender,
-         avatar
- });
+    const user = await User.create({ name, email, password, gender, avatar });
 
-   // 🚨 Safety check
     if (!user || !user._id) {
       return res.status(500).json({
         success: false,
@@ -46,7 +40,7 @@ export const register = async (req, res) => {
       });
     }
 
-     const safeUser = {
+    const safeUser = {
       id: user._id,
       name: user.name,
       email: user.email,
@@ -72,7 +66,6 @@ export const register = async (req, res) => {
       success: true,
       message: "User registered successfully",
       accessToken,
-      
       user: safeUser,
     });
   } catch (error) {
@@ -88,18 +81,20 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-if (!email || !password) {
+
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Provide valide email and password",
+        message: "Provide valid email and password",
       });
     }
+
     // check user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password. user exizt",
+        message: "Invalid email or password",
       });
     }
 
@@ -120,15 +115,12 @@ if (!email || !password) {
     user.refreshToken = refreshToken;
     await user.save();
 
-    
-    //set refreshToken into cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
     });
 
-    
     const safeUser = {
       id: user._id,
       name: user.name,
@@ -137,13 +129,11 @@ if (!email || !password) {
       maxCredits: user.maxCredits,
     };
 
-
     res.status(200).json({
       success: true,
       message: "Login successful",
       accessToken,
-        user: safeUser,
-      
+      user: safeUser,
     });
   } catch (error) {
     res.status(500).json({
@@ -157,7 +147,7 @@ if (!email || !password) {
 // REFRESH TOKEN
 export const refreshToken = async (req, res) => {
   try {
-    const  refreshToken  = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -178,14 +168,14 @@ export const refreshToken = async (req, res) => {
       });
     }
 
-    // generate new access token
+    // generate new tokens
     const newAccessToken = generateAccessToken(user._id);
-       const newRefreshToken = generateRefreshToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
 
-         user.refreshToken = newRefreshToken;
-         await user.save();
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
-           res.cookie("refreshToken", newRefreshToken, {
+    res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
@@ -209,11 +199,10 @@ export const refreshToken = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
- if (refreshToken) {
-      const user = await User.findOne({ refreshToken: refreshToken });
-
+    if (refreshToken) {
+      const user = await User.findOne({ refreshToken });
       if (user) {
-        user.refreshToken = null;//this makes user logout
+        user.refreshToken = null;
         await user.save();
       }
     }
@@ -235,13 +224,13 @@ export const logout = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
     res.status(200).json({
       success: true,
-      user: { id: user._id, name: user.name, email: user.email, creditsUsed: user.creditsUsed, maxCredits: user.maxCredits }
+      user: { id: user._id, name: user.name, email: user.email, creditsUsed: user.creditsUsed, maxCredits: user.maxCredits },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -253,7 +242,7 @@ export const updateProfile = async (req, res) => {
 
     const updateFields = {};
     if (name && name.trim()) updateFields.name = name.trim();
-    if (avatar) updateFields.avatar = avatar; // base64 data URL
+    if (avatar) updateFields.avatar = avatar;
 
     const user = await User.findByIdAndUpdate(userId, updateFields, { new: true });
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
