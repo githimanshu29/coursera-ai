@@ -32,7 +32,7 @@ const getLLM = ({ provider = "groq", model = "" } = {}) => {
       apiKey: process.env.GEMINI_API_KEY,
       model: resolvedModel,
       temperature: 0.7,
-      maxOutputTokens: 8192,
+      // Removed maxOutputTokens - let model stop naturally (faster)
     });
   }
 

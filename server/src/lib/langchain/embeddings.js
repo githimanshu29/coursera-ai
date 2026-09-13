@@ -17,7 +17,17 @@ class GeminiEmbeddings extends Embeddings {
   }
 
   async embedDocuments(texts) {
-    return Promise.all(texts.map((t) => this.embedQuery(t)));
+    // Batch all texts in ONE API call instead of N sequential calls
+    try {
+      const result = await this.client.models.embedContent({
+        model: "gemini-embedding-001",
+        contents: texts,
+      });
+      return result.embeddings.map((e) => e.values);
+    } catch {
+      // fallback to one-by-one if batch fails
+      return Promise.all(texts.map((t) => this.embedQuery(t)));
+    }
   }
 }
 

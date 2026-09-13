@@ -43,7 +43,7 @@ export const storeChapterChunks = async ({
   }));
 
   // store in batches of 5 — emit progress after each batch
-  const batchSize = 5;
+  const batchSize = 20; // Increased from 5 — fewer round trips to MongoDB Atlas
   let stored = 0;
 
   for (let i = 0; i < docsWithMeta.length; i += batchSize) {
