@@ -17,10 +17,16 @@ const ChapterContent = ({
   const chapter = course?.courseContent?.[activeChapterIndex];
   const chapterLayout = course?.courseJson?.chapters?.[activeChapterIndex];
   const videos = chapter?.youtubeVideo || [];
-  const MODEL_OPTIONS = {
-    groq: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"],
-    gemini: ["gemini-2.5-flash-lite", "gemini-2.5-flash"],
-  };
+  const GEMINI_MODELS = [
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.6-flash",
+      "gemini-3.7-flash",
+      "gemini-3.8-flash",
+      "gemini-3-flash-preview"
+  ];
 
   const [isMobile, setIsMobile] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -34,8 +40,10 @@ const ChapterContent = ({
   const [isRetakingFinal, setIsRetakingFinal] = useState(false);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [activeVideo, setActiveVideo] = useState(null);
-  const [quizModelProvider, setQuizModelProvider] = useState("groq");
-  const [quizModelName, setQuizModelName] = useState(MODEL_OPTIONS.groq[1]);
+  const quizModelProvider = "gemini";
+  const [quizModelName, setQuizModelName] = useState(
+    localStorage.getItem("customGeminiModel") || "gemini-2.5-flash-lite"
+  );
   const [quizError, setQuizError] = useState(null);
 
   // ── derived values ────────────────────────────────────────
@@ -180,11 +188,7 @@ const ChapterContent = ({
     setActiveVideo(null);
   };
 
-  const handleQuizProviderChange = (value) => {
-    setQuizModelProvider(value);
-    const nextModel = MODEL_OPTIONS[value]?.[0] || "";
-    setQuizModelName(nextModel);
-  };
+  
 
   const handleRetryQuiz = async () => {
     if (!quizError) return;
@@ -723,56 +727,31 @@ const ChapterContent = ({
               }}
             >
               <select
-                value={quizModelProvider}
-                onChange={(e) => handleQuizProviderChange(e.target.value)}
-                disabled={isLoadingQuiz || isRetakingChapter || isRetakingFinal}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  borderRadius: "10px",
-                  background: "rgba(31,41,55,0.8)",
-                  border: "1px solid rgba(75,85,99,0.5)",
-                  color: "white",
-                  fontSize: "12px",
-                  outline: "none",
-                  cursor: "pointer",
-                  animation: "attentionGlow 2.4s ease-in-out infinite",
-                  opacity:
-                    isLoadingQuiz || isRetakingChapter || isRetakingFinal
-                      ? 0.6
-                      : 1,
-                }}
-              >
-                <option value="groq">Groq</option>
-                <option value="gemini">Gemini</option>
-              </select>
-              <select
-                value={quizModelName}
-                onChange={(e) => setQuizModelName(e.target.value)}
-                disabled={isLoadingQuiz || isRetakingChapter || isRetakingFinal}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  borderRadius: "10px",
-                  background: "rgba(31,41,55,0.8)",
-                  border: "1px solid rgba(75,85,99,0.5)",
-                  color: "white",
-                  fontSize: "12px",
-                  outline: "none",
-                  cursor: "pointer",
-                  animation: "attentionGlow 2.4s ease-in-out infinite",
-                  opacity:
-                    isLoadingQuiz || isRetakingChapter || isRetakingFinal
-                      ? 0.6
-                      : 1,
-                }}
-              >
-                {MODEL_OPTIONS[quizModelProvider].map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
+                  value={quizModelName}
+                  onChange={(e) => {
+                    setQuizModelName(e.target.value);
+                    localStorage.setItem("customGeminiModel", e.target.value);
+                  }}
+                  disabled={isLoadingQuiz || isRetakingChapter || isRetakingFinal}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    background: "rgba(31,41,55,0.8)",
+                    border: "1px solid rgba(75,85,99,0.5)",
+                    color: "white",
+                    fontSize: "13px",
+                    outline: "none",
+                    opacity: isLoadingQuiz || isRetakingChapter || isRetakingFinal ? 0.5 : 1,
+                    colorScheme: "dark",
+                  }}
+                >
+                  {GEMINI_MODELS.map((model) => (
+                    <option key={model} value={model} style={{ background: "#1f2937", color: "white" }}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
             </div>
             {currentQuizStatus?.attempted ? (
               <div
@@ -1245,46 +1224,30 @@ const ChapterContent = ({
                 }}
               >
                 <select
-                  value={quizModelProvider}
-                  onChange={(e) => handleQuizProviderChange(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "9px 12px",
-                    borderRadius: "10px",
-                    background: "rgba(31,41,55,0.8)",
-                    border: "1px solid rgba(75,85,99,0.5)",
-                    color: "white",
-                    fontSize: "12px",
-                    outline: "none",
-                    cursor: "pointer",
-                    animation: "attentionGlow 2.4s ease-in-out infinite",
-                  }}
-                >
-                  <option value="groq">Groq</option>
-                  <option value="gemini">Gemini</option>
-                </select>
-                <select
-                  value={quizModelName}
-                  onChange={(e) => setQuizModelName(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "9px 12px",
-                    borderRadius: "10px",
-                    background: "rgba(31,41,55,0.8)",
-                    border: "1px solid rgba(75,85,99,0.5)",
-                    color: "white",
-                    fontSize: "12px",
-                    outline: "none",
-                    cursor: "pointer",
-                    animation: "attentionGlow 2.4s ease-in-out infinite",
-                  }}
-                >
-                  {MODEL_OPTIONS[quizModelProvider].map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </select>
+                    value={quizModelName}
+                    onChange={(e) => {
+                      setQuizModelName(e.target.value);
+                      localStorage.setItem("customGeminiModel", e.target.value);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: "10px",
+                      background: "rgba(31,41,55,0.8)",
+                      border: "1px solid rgba(75,85,99,0.5)",
+                      color: "white",
+                      fontSize: "13px",
+                      outline: "none",
+                      colorScheme: "dark",
+                      animation: "attentionGlow 2.4s ease-in-out infinite",
+                    }}
+                  >
+                    {GEMINI_MODELS.map((model) => (
+                      <option key={model} value={model} style={{ background: "#1f2937", color: "white" }}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
               </div>
               <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
                 <button
